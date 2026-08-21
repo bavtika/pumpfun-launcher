@@ -20,7 +20,12 @@ import {
 } from "../lib/pumpSdk.js";
 import { PumpAgentOffline, TOKEN_AGENT_PAYMENTS_MIN_RENT_EXEMPT_LAMPORTS } from "../lib/agentSdk.js";
 import { NATIVE_MINT, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
-import { getConnection, resolveWalletKeypair, signV0Tx } from "../lib/solana.js";
+import {
+  getConnection,
+  resolveWalletKeypair,
+  signV0Tx,
+  signV0TxFitting,
+} from "../lib/solana.js";
 import { readWallets } from "../lib/wallets.js";
 import { fetchPumpGlobals } from "../lib/pumpCache.js";
 import { uploadMetadataToPumpFun } from "./ipfs.js";
@@ -249,6 +254,15 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
   const pumpSdk = new PumpSdk();
   const onlineSdk = new OnlinePumpSdk(conn);
 
+  // Fail fast on bad vanity keys before spending IPFS / balance RPC.
+  let mintKp: Keypair;
+  try {
+    mintKp = p.customCA ? Keypair.fromSecretKey(bs58.decode(p.customCA)) : Keypair.generate();
+  } catch {
+    throw new Error("Invalid customCA: expected a base58-encoded Solana secret key");
+  }
+  const mint = mintKp.publicKey;
+
   const [deployerKey, metaRes] = await Promise.all([
     resolveWalletKeypair(p.userId, p.walletPubkey),
     uploadMetadataToPumpFun({
@@ -265,7 +279,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
   ]);
   if (!deployerKey) {
     throw new Error(
-      "No deployer wallet configured. Create/import a wallet or set DEPLOYER_PRIVKEY env var."
+      "No deployer wallet configured. Create or import a wallet, then select it for deploy."
     );
   }
 
@@ -305,16 +319,13 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
 
   const imageUrl: string | null = typeof metaRes.image === "string" ? metaRes.image : null;
 
-  const mintKp = p.customCA
-    ? Keypair.fromSecretKey(bs58.decode(p.customCA))
-    : Keypair.generate();
-  const mint = mintKp.publicKey;
-
   const { global, feeConfig } = await fetchPumpGlobals(onlineSdk);
 
   const solLamports = new BN(Math.round(p.buyAmountSol * 1e9));
   const hasBuy = solLamports.gtn(0);
-  let createIxs: TransactionInstruction[];
+  /** create (+ ATA) — kept separate from buy so oversized txs can split under 1232 bytes. */
+  let setupIxs: TransactionInstruction[];
+  let buyIxs: TransactionInstruction[] = [];
 
   if (hasBuy) {
     const tokenAmount = getBuyTokenAmountFromSolAmount({
@@ -328,7 +339,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     console.log(
       `[*] Building create+buy instructions (${p.buyAmountSol} SOL dev buy${cashback ? ", cashback" : ""}${mayhemMode ? `, mayhem ${mayhemAgentMode}` : ""})...`
     );
-    createIxs = await pumpSdk.createV2AndBuyInstructions({
+    const combined = await pumpSdk.createV2AndBuyInstructions({
       global,
       mint,
       name: p.name,
@@ -341,11 +352,14 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       mayhemMode,
       cashback,
     });
+    // SDK order: createV2, createATA, buy
+    setupIxs = combined.slice(0, -1);
+    buyIxs = combined.slice(-1);
   } else {
     console.log(
       `[*] Building create instruction (no dev buy${cashback ? ", cashback" : ""}${mayhemMode ? `, mayhem ${mayhemAgentMode}` : ""})...`
     );
-    createIxs = [
+    setupIxs = [
       await pumpSdk.createV2Instruction({
         mint,
         name: p.name,
@@ -366,7 +380,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       agentAuthority: deployerKey.publicKey,
       buybackBps,
     });
-    createIxs.push(agentIx);
+    setupIxs.push(agentIx);
     console.log(`[*] Tokenized agent initialize: buyback ${buybackBps} bps`);
   }
 
@@ -377,7 +391,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       shareBps: s.shareBps,
     }));
     // create_fee_sharing_config starts as [(creator, 10000)]; update once to final shares.
-    createIxs.push(
+    setupIxs.push(
       await pumpSdk.createFeeSharingConfig({
         creator,
         mint,
@@ -400,10 +414,13 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
   const extraCu =
     (tokenizedAgent ? AGENT_CU : 0) + (feeSharing ? FEE_SHARE_CU : 0) + (mayhemMode ? MAYHEM_CU : 0);
   if (extraCu > 0) {
-    createIxs.unshift(
+    setupIxs.unshift(
       ComputeBudgetProgram.setComputeUnitLimit({ units: CREATE_BUY_CU + extraCu })
     );
   }
+
+  const createIxs = [...setupIxs, ...buyIxs];
+  const cuPriceIx = ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 });
 
   // Extra bundle buys: create + up to 3 sniper txs + separate tip tx (Jito max 5).
   const creatorPk = deployerKey.publicKey.toBase58();
@@ -412,13 +429,16 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     .slice(0, JITO_MAX_TXS - 2);
 
   const stored = extraBuys.length ? await readWallets(p.userId) : [];
-  const extraKeys = extraBuys
-    .map((b) => {
-      const w = stored.find((ww) => ww.pubkey === b.pubkey);
-      if (!w) return null;
-      return { buy: b, kp: Keypair.fromSecretKey(bs58.decode(w.secretKey)) };
-    })
-    .filter((x): x is { buy: BundleBuy; kp: Keypair } => Boolean(x));
+  const missing = extraBuys.filter((b) => !stored.some((ww) => ww.pubkey === b.pubkey));
+  if (missing.length) {
+    throw new Error(
+      `Bundle wallet(s) not found in your store: ${missing.map((m) => m.pubkey.slice(0, 8) + "…").join(", ")}`
+    );
+  }
+  const extraKeys = extraBuys.map((b) => {
+    const w = stored.find((ww) => ww.pubkey === b.pubkey)!;
+    return { buy: b, kp: Keypair.fromSecretKey(bs58.decode(w.secretKey)) };
+  });
 
   let curve: BondingCurve = {
     ...newBondingCurve(global, NATIVE_MINT),
@@ -466,14 +486,41 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
 
   const { blockhash } = await conn.getLatestBlockhash("confirmed");
   const tipIx = p.useJito ? await buildJitoTipIx(deployerKey.publicKey, p.jitoTipSol ?? 0.001) : null;
+  const createSigners = [mintKp, deployerKey];
 
-  const signedTxs = [
-    signV0Tx(deployerKey.publicKey, createIxs, [mintKp, deployerKey], blockhash),
-    ...extraIxs.map((extra) => signV0Tx(extra.kp.publicKey, extra.ixs, [extra.kp], blockhash)),
-  ];
+  const combinedCreate = signV0TxFitting(
+    deployerKey.publicKey,
+    [createIxs],
+    createSigners,
+    blockhash
+  );
+  const signedTxs = combinedCreate
+    ? [combinedCreate]
+    : buyIxs.length > 0
+      ? [
+          signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash),
+          signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], blockhash),
+        ]
+      : [signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash)];
+
+  if (!combinedCreate && buyIxs.length > 0) {
+    console.warn(`[~] create+buy exceeds tx size limit; splitting into ${signedTxs.length} txs`);
+  }
+
+  signedTxs.push(
+    ...extraIxs.map((extra) => signV0Tx(extra.kp.publicKey, extra.ixs, [extra.kp], blockhash))
+  );
   // Jito searchers expect a dedicated last tip tx — stuffing the transfer into create often drops the bundle.
   if (tipIx) {
     signedTxs.push(signV0Tx(deployerKey.publicKey, [tipIx], [deployerKey], blockhash));
+  }
+
+  // Jito max 5 txs: create(+buy) + up to 3 snipes + tip. If we split create/buy, drop snipes first.
+  while (signedTxs.length > JITO_MAX_TXS) {
+    const tipIdx = tipIx ? signedTxs.length - 1 : -1;
+    const dropAt = tipIdx > 1 ? tipIdx - 1 : signedTxs.length - 1;
+    if (dropAt <= 0) break;
+    signedTxs.splice(dropAt, 1);
   }
 
   const mintAddr = mint.toBase58();
@@ -488,23 +535,35 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
         console.log(`✅ Jito bundle landed: ${bundleId} | mint=${mintAddr}`);
         return { bundleId, mint: mintAddr, pumpUrl, imageUrl };
       }
+      // Avoid racing an RPC create against a late-landing Jito bundle.
+      const already = await conn.getAccountInfo(mint).catch(() => null);
+      if (already) {
+        console.log(`✅ Mint on-chain after Jito poll window (late land): ${mintAddr}`);
+        return { bundleId, mint: mintAddr, pumpUrl, imageUrl };
+      }
       console.warn(`[~] Jito bundle did not land in time, falling back to RPC`);
     } catch (e) {
+      const already = await conn.getAccountInfo(mint).catch(() => null);
+      if (already) {
+        console.log(`✅ Mint on-chain after Jito error (late land): ${mintAddr}`);
+        return { mint: mintAddr, pumpUrl, imageUrl };
+      }
       console.warn(`[~] Jito unavailable, falling back to RPC: ${e instanceof Error ? e.message : e}`);
     }
   }
 
   const { blockhash: bh2 } = await conn.getLatestBlockhash("confirmed");
-  const rpcCreate = signV0Tx(
+  const rpcPriority = [cuPriceIx, ...createIxs];
+  const rpcCombined = signV0TxFitting(
     deployerKey.publicKey,
-    extraIxs.length === 0
-      ? [ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 }), ...createIxs]
-      : createIxs,
-    [mintKp, deployerKey],
+    // Priority fee only when it still fits — create+buy is already near the 1232-byte cap.
+    extraIxs.length === 0 ? [rpcPriority, createIxs] : [createIxs],
+    createSigners,
     bh2
   );
-  try {
-    const sig = await conn.sendRawTransaction(rpcCreate.serialize(), {
+
+  const sendConfirm = async (tx: ReturnType<typeof signV0Tx>, label: string) => {
+    const sig = await conn.sendRawTransaction(tx.serialize(), {
       skipPreflight: true,
       maxRetries: 5,
     });
@@ -516,7 +575,29 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
         : msg.includes('"Custom":6062')
           ? " (BuybackFeeRecipientMissing — pump program requires buyback fee recipient on buy)"
           : "";
-      throw new Error(`Create tx failed: ${msg}${hint}`);
+      throw new Error(`${label} failed: ${msg}${hint}`);
+    }
+    return sig;
+  };
+
+  try {
+    let sig: string;
+    if (rpcCombined) {
+      sig = await sendConfirm(rpcCombined, "Create tx");
+    } else if (buyIxs.length > 0) {
+      console.warn(`[~] RPC create+buy too large; sending setup then buy`);
+      await sendConfirm(signV0Tx(deployerKey.publicKey, setupIxs, createSigners, bh2), "Create tx");
+      sig = await sendConfirm(
+        signV0TxFitting(
+          deployerKey.publicKey,
+          [[cuPriceIx, ...buyIxs], buyIxs],
+          [deployerKey],
+          bh2
+        ) ?? signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], bh2),
+        "Buy tx"
+      );
+    } else {
+      throw new Error("Create tx exceeds Solana size limit");
     }
     await Promise.all(
       extraIxs.map(({ kp, ixs }) =>

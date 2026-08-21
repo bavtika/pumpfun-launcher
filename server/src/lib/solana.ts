@@ -7,7 +7,7 @@ import {
   type TransactionInstruction,
 } from "@solana/web3.js";
 import bs58 from "bs58";
-import { RPC_URL, DEPLOYER_PRIVKEY } from "./config.js";
+import { RPC_URL } from "./config.js";
 import { readWallets } from "./wallets.js";
 
 let _conn: Connection | null = null;
@@ -27,8 +27,8 @@ export function isValidPubkey(s: unknown): s is string {
 }
 
 /**
- * Resolve a keypair for signing: explicit wallet pubkey → dev-marked wallet → env var.
- * Used both for deploys and for trades.
+ * Resolve a keypair for signing: explicit wallet pubkey → dev-marked wallet.
+ * Used both for deploys and for trades. Never falls back to a shared env key.
  */
 export async function resolveWalletKeypair(
   userId: string,
@@ -44,10 +44,11 @@ export async function resolveWalletKeypair(
 
   const dev = wallets.find((w) => w.isDev);
   if (dev) return Keypair.fromSecretKey(bs58.decode(dev.secretKey));
-
-  if (DEPLOYER_PRIVKEY) return Keypair.fromSecretKey(bs58.decode(DEPLOYER_PRIVKEY));
   return null;
 }
+
+/** Solana UDP packet limit for a serialized transaction. */
+export const MAX_TX_BYTES = 1232;
 
 /** Build a v0 transaction, sign and send. Does not wait for confirmation. */
 export function signV0Tx(
@@ -65,6 +66,29 @@ export function signV0Tx(
   );
   tx.sign(signers);
   return tx;
+}
+
+export function txByteLength(tx: VersionedTransaction): number {
+  return tx.serialize().length;
+}
+
+export function txFits(tx: VersionedTransaction): boolean {
+  return txByteLength(tx) <= MAX_TX_BYTES;
+}
+
+/** First instruction list that serializes under the Solana packet limit. */
+export function signV0TxFitting(
+  payer: PublicKey,
+  variants: TransactionInstruction[][],
+  signers: Keypair[],
+  blockhash: string
+): VersionedTransaction | null {
+  for (const instructions of variants) {
+    if (instructions.length === 0) continue;
+    const tx = signV0Tx(payer, instructions, signers, blockhash);
+    if (txFits(tx)) return tx;
+  }
+  return null;
 }
 
 export async function buildSignAndSend(
