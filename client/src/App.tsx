@@ -7,6 +7,10 @@ import { SolanaGradientDefs } from "./lib/styles";
 import { api } from "./api/client";
 import { useAuthStore } from "./stores/auth";
 
+function LiquidWallpaper() {
+  return <div className="liquid-wallpaper" aria-hidden />;
+}
+
 export default function App() {
   const user = useAuthStore((s) => s.user);
   const ready = useAuthStore((s) => s.ready);
@@ -23,6 +27,7 @@ export default function App() {
   if (!ready) {
     return (
       <>
+        <LiquidWallpaper />
         <SolanaGradientDefs />
         <div className="h-full flex items-center justify-center text-dim text-xs">Loading…</div>
       </>
@@ -32,6 +37,7 @@ export default function App() {
   if (!user) {
     return (
       <>
+        <LiquidWallpaper />
         <SolanaGradientDefs />
         <LoginPage />
       </>
@@ -40,6 +46,7 @@ export default function App() {
 
   return (
     <>
+      <LiquidWallpaper />
       <SolanaGradientDefs />
       <Routes>
         <Route path="/" element={<LauncherPage />} />

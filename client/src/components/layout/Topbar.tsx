@@ -104,23 +104,23 @@ export function Topbar() {
   };
 
   return (
-    <header className="fixed top-2.5 left-2.5 right-2.5 h-12 bg-panel border border-line rounded-lg flex items-center justify-between px-4 z-[100]">
-      <div className="flex items-center gap-2.5 select-none">
-        <div className="w-6.5 h-6.5 rounded-md bg-white/[0.06] border border-line flex items-center justify-center">
+    <header className="glass glass-pill fixed top-3 left-3 right-3 h-14 flex items-center justify-between px-5 z-[100]">
+      <div className="relative z-[1] flex items-center gap-2.5 select-none">
+        <div className="w-7 h-7 rounded-full glass-inset flex items-center justify-center">
           <FlameIcon size={12} className="text-primary" />
         </div>
         <span className="text-[11.5px] font-semibold tracking-[0.14em] text-primary">LAUNCHER</span>
-        <span className="text-[9.5px] font-mono text-dim border border-line rounded-md px-1.5 py-0.5 ml-1">pump.fun</span>
+        <span className="text-[9.5px] font-mono text-dim glass-inset rounded-full px-2 py-0.5 ml-1">pump.fun</span>
       </div>
 
-      <div className="flex items-center gap-2">
+      <div className="relative z-[1] flex items-center gap-2">
         <div className="relative" ref={vampRef}>
           <button
             onClick={() => setVampOpen(!vampOpen)}
-            className={`flex items-center gap-1.5 h-8 px-3.5 rounded-md border text-[12.5px] transition-colors ${
+            className={`flex items-center gap-1.5 h-9 px-4 rounded-full text-[12.5px] transition-colors ${
               vampOpen
-                ? "border-line-focus text-primary bg-hover"
-                : "border-line text-muted hover:text-primary hover:bg-hover"
+                ? "glass-inset text-primary"
+                : "text-muted hover:text-primary hover:bg-hover"
             }`}
           >
             <VampIcon />
@@ -128,7 +128,7 @@ export function Topbar() {
           </button>
 
           {vampOpen && (
-            <div className="absolute right-0 top-[calc(100%+8px)] w-64 bg-panel border border-line rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.55)] p-3.5 z-[150] animate-[slideUp_0.14s_ease]">
+            <div className="glass absolute right-0 top-[calc(100%+10px)] w-64 rounded-[22px] p-4 z-[150] animate-[slideUp_0.18s_ease]">
               <div className="text-xs font-semibold text-primary mb-1">Vamp Coin</div>
               <div className="text-[11px] text-dim mb-2.5">
                 Clone any existing Solana coin and relaunch instantly.
@@ -141,7 +141,7 @@ export function Topbar() {
                 placeholder="Enter token address…"
                 autoComplete="off"
                 spellCheck={false}
-                className="w-full h-9 px-3 mb-2 bg-input border border-line rounded-md text-[12.5px] text-primary font-mono placeholder:text-dim outline-none focus:border-line-focus transition-colors"
+                className="w-full h-9 px-3.5 mb-2 glass-input rounded-full text-[12.5px] text-primary font-mono placeholder:text-dim outline-none transition-colors"
                 onKeyDown={(e) => {
                   if (e.key === "Enter") handleVampDeploy();
                 }}
@@ -149,7 +149,7 @@ export function Topbar() {
               <button
                 onClick={handleVampDeploy}
                 disabled={vampBusy}
-                className={`w-full h-9 flex items-center justify-center gap-1.5 rounded-md bg-primary text-black text-[12.5px] font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${vampBusy ? "btn-loading" : ""}`}
+                className={`w-full h-9 flex items-center justify-center gap-1.5 rounded-full bg-primary text-black text-[12.5px] font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${vampBusy ? "btn-loading" : ""}`}
               >
                 <FlameIcon size={12} />
                 {vampBusy ? "Deploying…" : "Deploy"}
@@ -160,19 +160,19 @@ export function Topbar() {
 
         <button
           onClick={() => setActivePage("feed")}
-          className="flex items-center gap-1.5 h-8 px-4 rounded-md bg-primary text-black text-[12.5px] font-semibold hover:bg-white/85 transition-colors"
+          className="flex items-center gap-1.5 h-9 px-4 rounded-full bg-primary text-black text-[12.5px] font-semibold hover:bg-white/85 transition-colors"
         >
           <FlameIcon />
           Create Coin
         </button>
-        <div className="flex items-center gap-2 pl-1 ml-1 border-l border-line">
+        <div className="flex items-center gap-2 pl-2 ml-1 border-l border-white/12">
           <span className="text-[11px] text-dim font-mono hidden sm:inline">{username}</span>
           <button
             onClick={() => {
               void api.logout().catch(() => {});
               clearAuth();
             }}
-            className="h-8 px-2.5 rounded-md border border-line text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="h-9 px-3 rounded-full glass-inset text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             Log out
           </button>

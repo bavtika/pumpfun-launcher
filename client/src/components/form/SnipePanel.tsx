@@ -8,7 +8,7 @@ export function SnipePanel() {
   const setSnipeField = useFormStore((s) => s.setSnipeField);
 
   return (
-    <div className="bg-white/[0.03] border border-line rounded-sm p-3">
+    <div className="glass-inset rounded-[16px] p-3">
       <div className="mb-2.5 text-[10px] font-bold text-dim uppercase tracking-[0.08em]">
         Snipe Settings
       </div>

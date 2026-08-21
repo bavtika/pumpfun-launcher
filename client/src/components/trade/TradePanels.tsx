@@ -7,7 +7,7 @@ function TradePanel({ panel, index }: { panel: TradePanelData; index: number }) 
 
   return (
     <div
-      className="fixed bottom-bottombar w-[300px] h-[480px] bg-panel border border-line rounded-t-md shadow-[0_-8px_24px_rgba(0,0,0,0.5)] z-[160] flex flex-col overflow-hidden"
+      className="fixed bottom-bottombar w-[300px] h-[480px] glass rounded-t-[24px] z-[160] flex flex-col overflow-hidden"
       style={{ right: 10 + index * 310 }}
     >
       <div className="relative">

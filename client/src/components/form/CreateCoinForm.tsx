@@ -334,10 +334,10 @@ export function CreateCoinForm() {
       </div>
 
       {/* Deploy footer */}
-      <div className="p-3 border-t border-line bg-white/[0.015]">
+      <div className="p-3 border-t border-white/10 bg-white/[0.04]">
         <button
           onClick={deployIntent}
-          className="w-full h-11 rounded-md bg-primary text-black text-[13.5px] font-semibold flex items-center justify-center gap-2 hover:bg-white/85 transition-colors"
+          className="w-full h-11 rounded-full bg-primary text-black text-[13.5px] font-semibold flex items-center justify-center gap-2 hover:bg-white/85 transition-colors"
         >
           <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
             <path d="M8 2C8 2 5.5 4 4.5 7L7 9.5C10 8.5 12 6 12 6L8 2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />

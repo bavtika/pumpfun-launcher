@@ -1,49 +1,44 @@
 @import "tailwindcss";
 
 /*
- * Design system — minimal dark monochrome (Linear / Vercel style).
- * Flat near-black surfaces, hairline borders, white as the only accent,
- * comfortable density, subtle motion. No gradients, no glows.
+ * Liquid Glass — iOS-style material.
+ * Frosted refraction, specular rims, capsule chrome.
+ * WebGL libraries (liquidGL / liquidglass) snapshot the DOM and fight
+ * draggable windows; CSS backdrop-filter + rim lighting is the same look
+ * without freezing the window manager.
  */
 
 @theme {
-  /* Backgrounds */
-  --color-base: #0a0a0a;
-  --color-panel: #101010;
-  --color-card: #161616;
-  --color-input: #0c0c0c;
-  --color-hover: rgba(255, 255, 255, 0.05);
+  --color-base: #07070c;
+  --color-panel: rgba(22, 24, 32, 0.42);
+  --color-card: rgba(255, 255, 255, 0.07);
+  --color-input: rgba(8, 10, 16, 0.45);
+  --color-hover: rgba(255, 255, 255, 0.1);
 
-  /* Borders — hairlines */
-  --color-line: rgba(255, 255, 255, 0.07);
-  --color-line-focus: rgba(255, 255, 255, 0.2);
+  --color-line: rgba(255, 255, 255, 0.16);
+  --color-line-focus: rgba(255, 255, 255, 0.42);
 
-  /* Text */
-  --color-primary: #fafafa;
-  --color-muted: #a3a3a3;
-  --color-dim: #5c5c5c;
+  --color-primary: #f5f5f7;
+  --color-muted: #c7c7cc;
+  --color-dim: #8e8e93;
 
-  /* Accent — pure monochrome: white */
-  --color-accent: #fafafa;
-  --color-green: #46a758;
-  --color-cyan: #4aa8a0;
-  --color-amber: #d9a13b;
-  --color-purple: #9a8fc9;
-  --color-indigo: #7d87c9;
-  --color-danger: #e5484d;
+  --color-accent: #f5f5f7;
+  --color-green: #34c759;
+  --color-cyan: #64d2ff;
+  --color-amber: #ffd60a;
+  --color-purple: #bf5af2;
+  --color-indigo: #5e5ce6;
+  --color-danger: #ff453a;
 
-  /* Layout — structural */
-  --spacing-topbar: 60px;
-  --spacing-bottombar: 68px;
+  --spacing-topbar: 68px;
+  --spacing-bottombar: 80px;
 
-  /* Radius */
-  --radius-sm: 8px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
+  --radius-sm: 14px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
 
-  /* Fonts */
-  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --font-sans: "SF Pro Display", "SF Pro Text", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Consolas, monospace;
 }
 
 html,
@@ -54,11 +49,124 @@ body {
 body {
   font-family: var(--font-sans);
   font-size: 13.5px;
-  line-height: 1.5;
+  line-height: 1.45;
+  letter-spacing: -0.01em;
   color: var(--color-primary);
   background-color: var(--color-base);
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
+}
+
+/* ── Wallpaper (something for the glass to refract) ─────── */
+.liquid-wallpaper {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(120% 80% at 10% -10%, rgba(88, 86, 214, 0.55), transparent 50%),
+    radial-gradient(90% 70% at 110% 10%, rgba(255, 55, 95, 0.38), transparent 46%),
+    radial-gradient(80% 60% at 80% 110%, rgba(50, 215, 255, 0.32), transparent 50%),
+    radial-gradient(60% 50% at 0% 80%, rgba(191, 90, 242, 0.28), transparent 50%),
+    #07070c;
+}
+
+.liquid-wallpaper::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255, 255, 255, 0.07), transparent 28%),
+    radial-gradient(circle at 70% 60%, rgba(100, 210, 255, 0.12), transparent 32%);
+  filter: blur(40px);
+  animation: liquidDrift 28s ease-in-out infinite alternate;
+}
+
+@keyframes liquidDrift {
+  from { transform: translate3d(-2%, -1%, 0) scale(1); }
+  to { transform: translate3d(3%, 2%, 0) scale(1.08); }
+}
+
+#root {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+}
+
+/* ── Liquid glass material ──────────────────────────────── */
+.glass {
+  position: relative;
+  isolation: isolate;
+  background: linear-gradient(
+    165deg,
+    rgba(255, 255, 255, 0.18) 0%,
+    rgba(255, 255, 255, 0.07) 42%,
+    rgba(255, 255, 255, 0.04) 100%
+  );
+  backdrop-filter: blur(36px) saturate(180%);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow:
+    0 0.5px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -0.5px 0 rgba(255, 255, 255, 0.06) inset,
+    0 12px 40px rgba(0, 0, 0, 0.32);
+}
+
+.glass::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: -1;
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.38) 0%,
+    rgba(255, 255, 255, 0.04) 28%,
+    transparent 48%,
+    rgba(120, 200, 255, 0.06) 100%
+  );
+  opacity: 0.85;
+  mix-blend-mode: screen;
+}
+
+.glass-active {
+  border-color: rgba(255, 255, 255, 0.4);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.45) inset,
+    0 -0.5px 0 rgba(255, 255, 255, 0.08) inset,
+    0 18px 50px rgba(0, 0, 0, 0.4);
+}
+
+.glass-inset {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.18) inset;
+}
+
+.glass-pill {
+  border-radius: 999px;
+}
+
+.glass-input {
+  background: rgba(0, 0, 0, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0.5px 0 rgba(255, 255, 255, 0.12) inset;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+.glass-input:focus,
+.glass-input:focus-visible {
+  border-color: rgba(255, 255, 255, 0.4);
+  outline: none;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: rgba(28, 28, 36, 0.92);
+  }
 }
 
 /* ── Number inputs — no native spinner arrows ───────────── */
@@ -81,13 +189,13 @@ input[type="number"] {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.16);
   border-radius: 99px;
   border: 2px solid transparent;
   background-clip: content-box;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.28);
   background-clip: content-box;
 }
 
@@ -97,11 +205,11 @@ input[type="number"] {
   to { opacity: 1; }
 }
 @keyframes slideUp {
-  from { transform: translateY(6px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from { transform: translateY(8px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
 }
 @keyframes toastIn {
-  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(8px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 @keyframes spin {
@@ -110,14 +218,14 @@ input[type="number"] {
 
 /* ── Selection & keyboard focus ─────────────────────────── */
 ::selection {
-  background: rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.22);
   color: #fff;
 }
 
 :focus-visible {
-  outline: 1.5px solid rgba(255, 255, 255, 0.3);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: 2px solid rgba(255, 255, 255, 0.45);
+  outline-offset: 3px;
+  border-radius: 12px;
 }
 
 button:focus:not(:focus-visible),
@@ -141,12 +249,12 @@ textarea:focus:not(:focus-visible) {
 .win-resize-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
 .win-resize-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
 
-/* ── Toggle switch ──────────────────────────────────────── */
+/* ── Toggle switch (iOS) ────────────────────────────────── */
 .toggle-switch {
   position: relative;
   display: inline-block;
-  width: 34px;
-  height: 20px;
+  width: 42px;
+  height: 26px;
   flex-shrink: 0;
 }
 .toggle-switch input {
@@ -157,28 +265,31 @@ textarea:focus:not(:focus-visible) {
 .toggle-knob {
   position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 99px;
-  transition: background 0.15s;
+  transition: background 0.2s, border-color 0.2s;
   cursor: pointer;
+  backdrop-filter: blur(12px);
 }
 .toggle-knob::after {
   content: "";
   position: absolute;
-  left: 3px;
-  top: 3px;
-  width: 14px;
-  height: 14px;
-  background: var(--color-dim);
+  left: 2px;
+  top: 2px;
+  width: 20px;
+  height: 20px;
+  background: #fff;
   border-radius: 50%;
-  transition: transform 0.15s, background 0.15s;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.28);
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1);
 }
 .toggle-switch input:checked + .toggle-knob {
-  background: #fafafa;
+  background: #34c759;
+  border-color: transparent;
 }
 .toggle-switch input:checked + .toggle-knob::after {
-  transform: translateX(14px);
-  background: #0a0a0a;
+  transform: translateX(16px);
 }
 
 /* ── Range slider ───────────────────────────────────────── */
@@ -186,28 +297,30 @@ textarea:focus:not(:focus-visible) {
   width: 100%;
   -webkit-appearance: none;
   appearance: none;
-  height: 3px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.12);
+  height: 4px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
   outline: none;
   cursor: pointer;
 }
 .volume-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #fafafa;
+  background: #fff;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
   cursor: pointer;
 }
 .volume-slider::-moz-range-thumb {
-  width: 13px;
-  height: 13px;
+  width: 18px;
+  height: 18px;
   border-radius: 50%;
-  background: #fafafa;
+  background: #fff;
   cursor: pointer;
   border: none;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Loading spinner (buttons) ──────────────────────────── */

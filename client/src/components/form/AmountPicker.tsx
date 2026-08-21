@@ -19,10 +19,10 @@ export function AmountPicker() {
               setField("selectedAmount", v);
               setField("customAmount", null);
             }}
-            className={`flex items-center gap-1.5 h-9 px-3.5 rounded-md border text-[12px] font-mono transition-colors ${
+            className={`flex items-center gap-1.5 h-9 px-3.5 rounded-full text-[12px] font-mono transition-colors ${
               customAmount === null && selectedAmount === v
-                ? "border-line-focus bg-white/[0.06] text-primary"
-                : "border-line bg-card text-dim hover:text-muted hover:bg-hover"
+                ? "glass-inset text-primary ring-1 ring-white/30"
+                : "glass-inset text-dim hover:text-muted hover:bg-hover"
             }`}
           >
             {solIcon}

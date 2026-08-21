@@ -1,19 +1,19 @@
 /** Shared Tailwind class strings matching the legacy field/button styles. */
 
 export const inputCls =
-  "h-9 w-full bg-input border border-line rounded-md px-3 text-[13px] text-primary placeholder:text-dim outline-none focus:border-line-focus transition-colors";
+  "h-9 w-full glass-input rounded-full px-3.5 text-[13px] text-primary placeholder:text-dim outline-none transition-colors";
 
 export const textareaCls =
-  "w-full bg-input border border-line rounded-md px-3 py-2.5 text-[13px] text-primary placeholder:text-dim outline-none focus:border-line-focus transition-colors resize-none";
+  "w-full glass-input rounded-[18px] px-3.5 py-2.5 text-[13px] text-primary placeholder:text-dim outline-none transition-colors resize-none";
 
 export const fieldLabelCls =
   "flex items-center justify-between text-[11.5px] font-medium text-muted mb-1.5";
 
 export const iconBtnCls =
-  "w-8 h-8 flex items-center justify-center rounded-md text-dim hover:text-primary hover:bg-hover transition-colors";
+  "w-8 h-8 flex items-center justify-center rounded-full text-dim hover:text-primary hover:bg-hover transition-colors";
 
 export const popBtnCls =
-  "h-7 px-3 rounded-md border border-line bg-white/[0.03] text-[11.5px] text-muted hover:text-primary hover:bg-hover transition-colors";
+  "h-7 px-3 rounded-full glass-inset text-[11.5px] text-muted hover:text-primary hover:bg-hover transition-colors";
 
 /**
  * Brand gradient for the Solana logomark. Mounted once at the app root so every

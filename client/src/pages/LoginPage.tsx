@@ -32,10 +32,10 @@ export function LoginPage() {
     <div className="min-h-full flex items-center justify-center p-6">
       <form
         onSubmit={(e) => void submit(e)}
-        className="w-full max-w-[360px] bg-panel border border-line rounded-lg p-6 flex flex-col gap-3.5"
+        className="w-full max-w-[360px] glass rounded-[28px] p-7 flex flex-col gap-3.5"
       >
         <div className="flex items-center gap-2.5 mb-1">
-          <div className="w-7 h-7 rounded-md bg-white/[0.06] border border-line flex items-center justify-center">
+          <div className="w-8 h-8 rounded-full glass-inset flex items-center justify-center">
             <FlameIcon size={13} className="text-primary" />
           </div>
           <div>
@@ -86,7 +86,7 @@ export function LoginPage() {
         <button
           type="submit"
           disabled={busy}
-          className="h-9 rounded-md bg-primary text-black text-[12.5px] font-semibold hover:bg-white/85 transition-colors disabled:opacity-60"
+          className="h-10 rounded-full bg-primary text-black text-[13px] font-semibold hover:bg-white/85 transition-colors disabled:opacity-60"
         >
           {busy ? "…" : mode === "login" ? "Sign in" : "Create account"}
         </button>

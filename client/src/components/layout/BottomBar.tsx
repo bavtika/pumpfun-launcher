@@ -54,7 +54,7 @@ function FeesDropdown() {
 
   return (
     <div
-      className="absolute bottom-[calc(100%+10px)] right-0 w-[268px] bg-panel border border-line rounded-lg p-3.5 z-[150] shadow-[0_12px_32px_rgba(0,0,0,0.55)] animate-[slideUp_0.14s_ease]"
+      className="glass glass-pill absolute bottom-[calc(100%+12px)] right-0 w-[268px] p-4 z-[150] animate-[slideUp_0.18s_ease]"
       onMouseDown={(e) => e.stopPropagation()}
     >
       {CHIP_SETS.map((set) => (
@@ -68,10 +68,10 @@ function FeesDropdown() {
               <button
                 key={v}
                 onClick={() => pick(set.key, v)}
-                className={`px-1 py-1.5 rounded-lg text-[11px] font-mono border transition-colors ${
+                className={`px-1 py-1.5 rounded-full text-[11px] font-mono transition-colors ${
                   fees[set.key] === v && customs[set.key] === ""
-                    ? "border-accent/50 bg-accent/10 text-accent"
-                    : "border-line text-muted hover:text-primary hover:bg-hover"
+                    ? "glass-inset text-primary"
+                    : "text-muted hover:text-primary hover:bg-hover"
                 }`}
               >
                 {set.fmt(v)}
@@ -86,16 +86,16 @@ function FeesDropdown() {
               placeholder="Custom"
               value={customs[set.key]}
               onChange={(e) => setCustom(set.key, e.target.value)}
-              className="w-full px-2 py-1.5 bg-input border border-line rounded-sm text-[11px] text-primary font-mono placeholder:text-dim outline-none focus:border-line-focus transition-colors"
+              className="w-full px-3 py-1.5 glass-input rounded-full text-[11px] text-primary font-mono placeholder:text-dim outline-none transition-colors"
             />
           </div>
         </div>
       ))}
 
-      <div className="pt-2 border-t border-line">
+      <div className="pt-2 border-t border-white/10">
         <button
           onClick={save}
-          className="w-full h-8 flex items-center justify-center gap-1.5 rounded-sm bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors"
+          className="w-full h-8 flex items-center justify-center gap-1.5 rounded-full bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors"
         >
           <CheckIcon />
           Save
@@ -184,10 +184,10 @@ export function BottomBar() {
   }, [feesOpen, setFeesOpen]);
 
   return (
-    <footer className="fixed bottom-3 left-0 right-0 z-[100] flex items-center justify-center gap-2 px-3 pointer-events-none">
+    <footer className="fixed bottom-3.5 left-0 right-0 z-[100] flex items-center justify-center gap-2.5 px-3 pointer-events-none">
       {/* status chip */}
       <div
-        className="pointer-events-auto h-11 rounded-lg flex items-center gap-2.5 px-4 bg-panel border border-line shadow-[0_4px_16px_rgba(0,0,0,0.35)]"
+        className="glass glass-pill pointer-events-auto h-12 flex items-center gap-2.5 px-5"
         title={health === false ? "Backend unreachable" : "Backend connected"}
       >
         <span
@@ -196,7 +196,7 @@ export function BottomBar() {
           }`}
         />
         <span className="text-[11px] text-muted">{health === false ? "Offline" : "Connected"}</span>
-        <span className="w-px h-4 bg-line" />
+        <span className="w-px h-4 bg-white/15" />
         <span className="flex items-center gap-1.5 text-[11px] font-mono text-muted" title="SOL / USD (CoinGecko, 60s)">
           {solIcon}
           <span className={solUsd === null ? "text-dim" : "text-primary"}>
@@ -206,7 +206,7 @@ export function BottomBar() {
       </div>
 
       {/* center dock: nav + window toggles */}
-      <nav className="pointer-events-auto h-11 rounded-lg flex items-center gap-1 px-1.5 bg-panel border border-line shadow-[0_4px_16px_rgba(0,0,0,0.35)]" aria-label="Main navigation">
+      <nav className="glass glass-pill pointer-events-auto h-12 flex items-center gap-1 px-1.5" aria-label="Main navigation">
         {NAV_ITEMS.map((item) => {
           const active = activePage === item.key;
           return (
@@ -214,10 +214,10 @@ export function BottomBar() {
               key={item.key}
               onClick={() => setActivePage(active ? "feed" : item.key)}
               aria-current={active ? "page" : undefined}
-              className={`flex items-center gap-1.5 h-9 px-3.5 rounded-md text-[12.5px] transition-colors ${
+              className={`relative z-[1] flex items-center gap-1.5 h-9 px-3.5 rounded-full text-[12.5px] transition-colors ${
                 active
-                  ? "bg-white/[0.08] text-primary"
-                  : "text-muted hover:text-primary hover:bg-hover"
+                  ? "bg-white/20 text-primary shadow-[0_0.5px_0_rgba(255,255,255,0.35)_inset]"
+                  : "text-muted hover:text-primary hover:bg-white/10"
               }`}
             >
               {item.icon}
@@ -226,7 +226,7 @@ export function BottomBar() {
           );
         })}
 
-        <span className="w-px h-5 bg-line mx-1" />
+        <span className="w-px h-5 bg-white/15 mx-1" />
 
         {WIN_BUTTONS.map((b) => {
           const open = !wins[b.id].hidden;
@@ -238,8 +238,8 @@ export function BottomBar() {
                 openWin(b.id);
               }}
               title={b.label}
-              className={`relative w-9 h-9 flex items-center justify-center rounded-md transition-colors ${
-                open ? "text-primary bg-white/[0.05] hover:bg-white/[0.08]" : "text-dim hover:text-muted hover:bg-hover"
+              className={`relative z-[1] w-9 h-9 flex items-center justify-center rounded-full transition-colors ${
+                open ? "text-primary bg-white/18" : "text-dim hover:text-muted hover:bg-white/10"
               }`}
             >
               {b.icon}
@@ -252,8 +252,8 @@ export function BottomBar() {
       <div className="relative pointer-events-auto" ref={feesRef}>
         <button
           onClick={() => setFeesOpen(!feesOpen)}
-          className={`h-11 px-4 rounded-lg flex items-center gap-1.5 text-[12.5px] border transition-colors bg-panel shadow-[0_4px_16px_rgba(0,0,0,0.35)] ${
-            feesOpen ? "text-primary border-line-focus" : "text-muted border-line hover:text-primary"
+          className={`glass glass-pill h-12 px-5 flex items-center gap-1.5 text-[12.5px] transition-colors ${
+            feesOpen ? "text-primary glass-active" : "text-muted hover:text-primary"
           }`}
         >
           <FeesIcon />
