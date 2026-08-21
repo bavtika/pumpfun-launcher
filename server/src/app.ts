@@ -34,6 +34,9 @@ export function createApp(): express.Express {
   app.set("trust proxy", 1);
   app.use(express.json({ limit: "2mb" }));
 
+  app.get("/api/health", (_req, res) => {
+    res.json({ ok: true });
+  });
   app.use("/api/auth", authRouter);
   app.use("/api", requireAuth);
   app.use("/api", lazy(() => import("./routes/misc.js")));

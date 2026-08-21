@@ -5,7 +5,7 @@ import { errMsg } from "../lib/config.js";
 
 export async function requireAuth(req: Request, res: Response, next: NextFunction): Promise<void> {
   const path = req.path;
-  if (path === "/health" || path === "/api/health" || req.originalUrl.startsWith("/api/health")) {
+  if (path === "/health" || path === "/api/health" || req.originalUrl.split("?")[0].endsWith("/health")) {
     next();
     return;
   }

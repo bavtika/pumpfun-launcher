@@ -6,9 +6,6 @@ import { errMsg } from "../lib/config.js";
 
 const router = Router();
 
-/** GET /api/health — liveness probe (does not expose RPC_URL: it may embed provider keys). */
-router.get("/health", (_req, res) => res.json({ ok: true }));
-
 /** GET /api/balance/:pubkey */
 router.get("/balance/:pubkey", async (req, res) => {
   try {
