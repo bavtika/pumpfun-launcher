@@ -73,12 +73,12 @@ export function ImageSection() {
       <div className="flex flex-col gap-2">
         {imageTab === "upload" && (
           <div
-            className={`relative h-[120px] rounded-[20px] border border-dashed flex items-center justify-center cursor-pointer transition-colors overflow-hidden ${
+            className={`relative h-[120px] rounded-md border border-dashed flex items-center justify-center cursor-pointer transition-colors overflow-hidden ${
               dragOver
                 ? "border-accent/60 bg-accent/5"
                 : hasImage
-                  ? "border-[#4ade8050] glass-inset"
-                  : "glass-inset hover:border-white/30"
+                  ? "border-[#4ade8050] bg-card"
+                  : "border-line bg-card hover:border-line-focus"
             }`}
             onClick={() => fileInputRef.current?.click()}
             onDragOver={(e) => {

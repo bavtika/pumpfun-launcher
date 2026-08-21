@@ -27,7 +27,7 @@ export function WalletSelect() {
     <div ref={rootRef} className="relative flex items-center gap-1.5">
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 h-6 px-2 rounded-full glass-inset text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors max-w-[190px]"
+        className="flex items-center gap-1.5 h-6 px-2 rounded-sm bg-white/[0.04] border border-line text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors max-w-[190px]"
       >
         <span className="text-[9px] font-semibold text-accent bg-accent/10 border border-accent/30 rounded px-1 py-px shrink-0">
           Dev
@@ -58,7 +58,7 @@ export function WalletSelect() {
       )}
 
       {open && (
-        <div className="absolute top-7 right-0 z-[150] w-[240px] glass rounded-[18px] overflow-hidden">
+        <div className="absolute top-7 right-0 z-[150] w-[240px] bg-panel border border-line rounded-md shadow-[0_8px_24px_rgba(0,0,0,0.5)] overflow-hidden">
           {wallets.length === 0 ? (
             <div className="px-3 py-3 text-[11px] text-dim">No wallets. Create one on the Wallets page.</div>
           ) : (

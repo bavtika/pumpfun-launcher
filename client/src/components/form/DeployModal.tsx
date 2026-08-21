@@ -70,14 +70,14 @@ export function DeployModal({ onConfirm }: DeployModalProps) {
         <>
           <button
             onClick={() => setDeployModalOpen(false)}
-            className="h-8 px-4 rounded-full glass-inset text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="h-8 px-4 rounded-sm border border-line text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
             disabled={busy}
-            className={`h-8 px-4 flex items-center gap-1.5 rounded-full bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${busy ? "btn-loading" : ""}`}
+            className={`h-8 px-4 flex items-center gap-1.5 rounded-sm bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${busy ? "btn-loading" : ""}`}
           >
             <FlameIcon size={14} />
             {busy ? "Signing…" : "Confirm Deploy"}

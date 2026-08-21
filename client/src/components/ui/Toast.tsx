@@ -23,7 +23,7 @@ export function Toast() {
 
   return (
     <div
-      className={`fixed bottom-[88px] left-1/2 -translate-x-1/2 px-5 py-2.5 glass glass-pill text-[12.5px] z-[300] whitespace-nowrap animate-[toastIn_0.18s_ease] ${colorClass}`}
+      className={`fixed bottom-[80px] left-1/2 -translate-x-1/2 px-4 py-2.5 bg-panel border rounded-lg text-[12.5px] shadow-[0_8px_24px_rgba(0,0,0,0.5)] z-[300] whitespace-nowrap animate-[toastIn_0.18s_ease] ${colorClass}`}
       role="status"
     >
       {message}

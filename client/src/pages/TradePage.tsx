@@ -13,8 +13,8 @@ export function TradePage() {
   const pumpUrl = params.get("pumpUrl") || `https://pump.fun/${mint}`;
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="glass w-full max-w-[420px] mx-auto h-full flex flex-col rounded-none sm:rounded-[28px] sm:my-3 overflow-hidden">
+    <div className="h-full flex flex-col bg-bg">
+      <div className="w-full max-w-[420px] mx-auto h-full flex flex-col border-x border-line">
         <TradeView
           mint={mint}
           walletPubkey={wallet || null}

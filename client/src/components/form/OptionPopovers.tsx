@@ -57,7 +57,7 @@ function PopoverShell({
     <div
       ref={ref}
       onMouseDown={(e) => e.stopPropagation()}
-      className="fixed z-[200] glass rounded-[22px] overflow-hidden animate-[slideUp_0.18s_ease]"
+      className="fixed z-[200] bg-panel border border-line rounded-lg shadow-[0_12px_32px_rgba(0,0,0,0.55)] overflow-hidden animate-[slideUp_0.14s_ease]"
       style={{ ...style, width }}
     >
       {children}
@@ -66,10 +66,10 @@ function PopoverShell({
 }
 
 const POP_HEADER =
-  "flex items-center justify-between px-3 py-2 border-b border-white/10 text-[11px] font-semibold text-primary";
+  "flex items-center justify-between px-3 py-2 border-b border-line text-[11px] font-semibold text-primary";
 const POP_BODY = "p-3 flex flex-col gap-2.5";
 const POP_FOOT =
-  "flex items-center justify-between px-3 py-2 border-t border-white/10 text-[10px] text-dim";
+  "flex items-center justify-between px-3 py-2 border-t border-line text-[10px] text-dim";
 
 /* ---------- bundle ---------- */
 
@@ -179,7 +179,7 @@ function BundlePopover() {
                       bundleAmounts: { ...s.bundleAmounts, [w.pubkey]: parseFloat(e.target.value) || 0 },
                     }))
                   }
-                  className="w-14 h-6 glass-input rounded-full px-2 text-[11px] text-primary outline-none"
+                  className="w-14 h-6 bg-input border border-line rounded-sm px-1.5 text-[11px] text-primary outline-none focus:border-line-focus"
                 />
               </div>
             </div>
@@ -224,7 +224,7 @@ function SnipePopover() {
           <span className="text-[11px] text-muted">Protection</span>
           <Toggle checked={protection} onChange={setProtection} />
         </div>
-        <div className="glass-inset rounded-[14px] p-2.5 text-[10px] text-dim leading-relaxed">
+        <div className="bg-white/[0.03] border border-line rounded-sm p-2.5 text-[10px] text-dim leading-relaxed">
           <div className="text-[10px] font-bold text-muted uppercase tracking-[0.08em] mb-1">Tips</div>
           Delayed snipes reduce the chance of being front-run. Higher priority fees land bundles faster.
         </div>
@@ -273,7 +273,7 @@ function MultideployPopover() {
                       cloneWallets: { ...s.cloneWallets, [i]: e.target.value },
                     }))
                   }
-                  className="flex-1 min-w-0 h-7 glass-input rounded-full px-2.5 text-[11px] text-primary outline-none cursor-pointer"
+                  className="flex-1 min-w-0 h-7 bg-input border border-line rounded-sm px-1.5 text-[11px] text-primary outline-none focus:border-line-focus cursor-pointer"
                 >
                   {selected === "" && <option value="">No wallet available</option>}
                   {available.map((w) => (
@@ -293,7 +293,7 @@ function MultideployPopover() {
                         cloneAmounts: { ...s.cloneAmounts, [i]: parseFloat(e.target.value) || 0 },
                       }))
                     }
-                    className="w-14 h-7 glass-input rounded-full px-2 text-[11px] text-primary outline-none"
+                    className="w-14 h-7 bg-input border border-line rounded-sm px-1.5 text-[11px] text-primary outline-none focus:border-line-focus"
                   />
                 </div>
               </div>
@@ -323,11 +323,11 @@ function FarmSnipersPopover() {
       </div>
       <div className={POP_BODY}>
         <div className="grid grid-cols-2 gap-2">
-          <div className="glass-inset rounded-[14px] p-2">
+          <div className="bg-white/[0.03] border border-line rounded-sm p-2">
             <div className="text-[9px] font-bold text-dim uppercase tracking-[0.08em]">Delay</div>
             <div className="text-xs font-mono text-primary mt-0.5">{delay} ms</div>
           </div>
-          <div className="glass-inset rounded-[14px] p-2">
+          <div className="bg-white/[0.03] border border-line rounded-sm p-2">
             <div className="text-[9px] font-bold text-dim uppercase tracking-[0.08em]">Sell %</div>
             <div className="text-xs font-mono text-primary mt-0.5">100</div>
           </div>
@@ -362,7 +362,7 @@ function MayhemPopover() {
         <span>Mayhem agent mode</span>
       </div>
       <div className={POP_BODY}>
-        <div className="flex p-1 rounded-full glass-inset">
+        <div className="flex p-1 rounded-full bg-white/[0.04] border border-line">
           {(["classic", "trigger"] as const).map((m) => {
             const on = mode === m;
             return (

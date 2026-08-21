@@ -59,7 +59,7 @@ export const useLayoutStore = create<LayoutState>((set) => ({
   initLayout: (wsW, wsH) =>
     set((s) => {
       if (s.initialized) return s;
-      const GAP = 12;
+      const GAP = 8;
       const ctW = 312;
       const deplW = 260;
       const formW = Math.max(MIN_W, wsW - ctW - deplW - GAP * 2);

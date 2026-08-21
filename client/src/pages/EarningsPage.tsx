@@ -50,7 +50,7 @@ function CreatorRewards() {
           <div className="text-[11px] text-dim mt-0.5">Claim creator rewards from your pump.fun deploys</div>
         </div>
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1.5 text-xs font-mono text-primary glass-inset rounded-full px-3 py-1.5">
+          <div className="flex items-center gap-1.5 text-xs font-mono text-primary bg-white/[0.04] border border-line rounded-sm px-2.5 py-1.5">
             {solIcon}
             {formatRewardSol(total)}
           </div>
@@ -79,7 +79,7 @@ function CreatorRewards() {
       {loading && rows.length === 0 ? (
         <div className="flex items-center justify-center py-16 text-dim text-xs">Loading rewards…</div>
       ) : rows.length === 0 ? (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 glass-inset rounded-[20px]">
+        <div className="flex flex-col items-center justify-center gap-3 py-16 bg-panel border border-line rounded-md">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
             <circle cx="14" cy="14" r="12" stroke="#252530" strokeWidth="1.5" />
             <path d="M14 8v8M10 14h8" stroke="#3a3a4a" strokeWidth="1.5" strokeLinecap="round" />
@@ -87,8 +87,8 @@ function CreatorRewards() {
           <p className="text-dim text-xs">No creator rewards to claim.</p>
         </div>
       ) : (
-        <div className="glass-inset rounded-[20px] overflow-hidden">
-          <div className="grid grid-cols-[1fr_1fr_120px_88px] gap-2 px-3 py-2 border-b border-white/10 text-[10px] font-bold text-dim tracking-[0.08em]">
+        <div className="bg-panel border border-line rounded-md overflow-hidden">
+          <div className="grid grid-cols-[1fr_1fr_120px_88px] gap-2 px-3 py-2 border-b border-line text-[10px] font-bold text-dim tracking-[0.08em]">
             <div>NAME</div>
             <div>REWARDS</div>
             <div>BALANCE</div>
@@ -121,7 +121,7 @@ function CreatorRewards() {
               </div>
               <div className="flex justify-end">
                 <button
-                  className="h-6 px-3 rounded-full bg-accent text-black text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  className="h-6 px-3 rounded-sm bg-accent text-black text-[11px] font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
                   disabled={claiming !== null}
                   onClick={() => void claim(w.pubkey)}
                 >
@@ -160,7 +160,7 @@ export function EarningsPage() {
 
   return (
     <div className="h-full flex">
-      <div className="w-[180px] shrink-0 border-r border-white/10 bg-white/[0.04] p-3 flex flex-col gap-1">
+      <div className="w-[180px] shrink-0 border-r border-line bg-panel/50 p-3 flex flex-col gap-1">
         <div className="text-[10px] font-bold text-dim uppercase tracking-[0.08em] px-2 py-2">
           Earnings
         </div>

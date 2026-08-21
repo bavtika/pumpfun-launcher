@@ -84,8 +84,8 @@ export function WalletsPage() {
 
       {/* table */}
       {wallets.length > 0 ? (
-        <div className="glass-inset rounded-[20px] overflow-hidden">
-          <div className="grid grid-cols-[160px_1fr_130px_88px] gap-2 px-3 py-2 border-b border-white/10 text-[10px] font-bold text-dim tracking-[0.08em]">
+        <div className="bg-panel border border-line rounded-md overflow-hidden">
+          <div className="grid grid-cols-[160px_1fr_130px_88px] gap-2 px-3 py-2 border-b border-line text-[10px] font-bold text-dim tracking-[0.08em]">
             <div>NAME</div>
             <div>ADDRESS</div>
             <div>BALANCE</div>
@@ -147,7 +147,7 @@ export function WalletsPage() {
           </div>
         </div>
       ) : (
-        <div className="flex flex-col items-center justify-center gap-3 py-16 glass-inset rounded-[20px]">
+        <div className="flex flex-col items-center justify-center gap-3 py-16 bg-panel border border-line rounded-md">
           <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
             <rect x="4" y="7" width="20" height="15" rx="2.5" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
             <path d="M4 12h20" stroke="rgba(255,255,255,0.1)" strokeWidth="1.5" />
@@ -208,7 +208,7 @@ function WalletNameCell({ pubkey, name, isDev }: { pubkey: string; name: string;
               setEditing(false);
             }
           }}
-          className="h-7 w-full glass-input rounded-full px-3 text-xs text-primary outline-none"
+          className="h-7 w-full bg-input border border-line-focus rounded-md px-2 text-xs text-primary outline-none"
         />
       </div>
     );
@@ -261,7 +261,7 @@ function CreateWalletModal({ open, onClose }: { open: boolean; onClose: () => vo
             Cancel
           </button>
           <button
-            className="h-7 px-3 rounded-full bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+            className="h-7 px-3 rounded-sm bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
             onClick={() => void submit()}
             disabled={busy}
           >
@@ -321,7 +321,7 @@ function ImportWalletModal({ open, onClose }: { open: boolean; onClose: () => vo
             Cancel
           </button>
           <button
-            className="h-7 px-3 rounded-full bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
+            className="h-7 px-3 rounded-sm bg-accent text-black text-xs font-medium hover:bg-accent/90 transition-colors disabled:opacity-60"
             onClick={() => void submit()}
             disabled={busy}
           >

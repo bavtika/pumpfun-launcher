@@ -48,7 +48,7 @@ function DeployedCard({ coin }: { coin: DeployedCoin }) {
   }, [storedImgOk, coin.mint, updateCoin]);
 
   return (
-    <div className="glass-inset rounded-[16px] p-2.5 flex flex-col gap-2 hover:border-white/25 transition-colors">
+    <div className="bg-white/[0.03] border border-line rounded-md p-2.5 flex flex-col gap-2 hover:border-line-focus transition-colors">
       <div className="flex items-center gap-2">
         {storedImgOk ? (
           <img
@@ -87,7 +87,7 @@ function DeployedCard({ coin }: { coin: DeployedCoin }) {
               delayMs: 0,
             })
           }
-          className="flex-1 flex items-center justify-center gap-1.5 h-7 rounded-full glass-inset text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors group/trade"
+          className="flex-1 flex items-center justify-center gap-1.5 h-7 rounded-sm border border-line bg-white/[0.04] text-[11px] text-muted hover:text-primary hover:border-line-focus hover:bg-hover transition-colors group/trade"
         >
           <TradeIcon size={11} className="text-dim group-hover/trade:text-accent transition-colors" />
           Trade Panel
@@ -96,7 +96,7 @@ function DeployedCard({ coin }: { coin: DeployedCoin }) {
           href={coin.pumpUrl || (coin.mint ? `https://pump.fun/${coin.mint}` : "#")}
           target="_blank"
           rel="noreferrer"
-          className="flex-1 flex items-center justify-center gap-1.5 h-7 rounded-full glass-inset text-[11px] text-muted hover:text-primary hover:bg-hover transition-colors"
+          className="flex-1 flex items-center justify-center gap-1.5 h-7 rounded-sm border border-line bg-white/[0.04] text-[11px] text-muted hover:text-primary hover:border-line-focus hover:bg-hover transition-colors"
         >
           <ExternalIcon size={11} />
           pump.fun
@@ -112,7 +112,7 @@ export function DeployedCards() {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/10 text-[10px] text-dim shrink-0">
+      <div className="flex items-center justify-between px-3 py-2 border-b border-line text-[10px] text-dim shrink-0">
         <span>{coins.length === 0 ? "Showing 0 / 0" : `Showing 1-${coins.length} / ${coins.length}`}</span>
         {coins.length > 0 && (
           <button onClick={clear} className="hover:text-danger transition-colors">

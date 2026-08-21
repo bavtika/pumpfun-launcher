@@ -20,14 +20,14 @@ export function Modal({ open, onClose, title, children, footer, width = 420 }: M
       }}
     >
       <div
-        className="glass rounded-[28px] shadow-[0_24px_64px_rgba(0,0,0,0.45)] max-w-[90vw] animate-[slideUp_0.18s_ease]"
+        className="bg-panel border border-line rounded-lg shadow-[0_24px_64px_rgba(0,0,0,0.7)] max-w-[90vw] animate-[slideUp_0.16s_ease]"
         style={{ width }}
       >
-        <div className="flex items-center justify-between px-5 pt-4 pb-3.5 border-b border-white/10">
+        <div className="flex items-center justify-between px-[18px] pt-4 pb-3.5 border-b border-line">
           <h3 className="text-sm font-semibold text-primary">{title}</h3>
           <button
             onClick={onClose}
-            className="w-7 h-7 flex items-center justify-center rounded-full text-dim hover:text-primary hover:bg-hover transition-colors"
+            className="w-6 h-6 flex items-center justify-center rounded-sm text-dim hover:text-primary hover:bg-hover transition-colors"
             aria-label="Close"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -37,7 +37,7 @@ export function Modal({ open, onClose, title, children, footer, width = 420 }: M
         </div>
         <div className="px-[18px] py-4 flex flex-col gap-2.5">{children}</div>
         {footer && (
-          <div className="flex gap-2 justify-end px-5 pt-3.5 pb-4 border-t border-white/10">
+          <div className="flex gap-2 justify-end px-[18px] pt-3.5 pb-4 border-t border-line">
             {footer}
           </div>
         )}

@@ -122,8 +122,10 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
   return (
     <div
       ref={frameRef}
-      className={`glass absolute flex flex-col overflow-hidden min-w-[220px] rounded-[24px] transition-[box-shadow,border-color] duration-200 ${
-        isActive ? "glass-active" : ""
+      className={`absolute flex flex-col bg-panel border rounded-lg overflow-hidden min-w-[220px] transition-shadow duration-150 ${
+        isActive
+          ? "border-line-focus shadow-[0_16px_48px_rgba(0,0,0,0.55)]"
+          : "border-line shadow-[0_6px_20px_rgba(0,0,0,0.35)]"
       }`}
       style={{
         left: win.left,
@@ -142,8 +144,8 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
       ))}
 
       <div
-        className={`relative z-[1] flex items-center justify-between h-11 px-3.5 border-b border-white/10 cursor-grab select-none shrink-0 transition-colors ${
-          isActive ? "bg-white/[0.06]" : "bg-transparent"
+        className={`flex items-center justify-between h-10 px-3 border-b border-line cursor-grab select-none shrink-0 transition-colors ${
+          isActive ? "bg-white/[0.03]" : "bg-transparent"
         }`}
         onMouseDown={onHeaderMouseDown}
       >
@@ -160,7 +162,7 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
         <div className="flex items-center gap-1">
           {headerRight}
           <button
-            className="w-[22px] h-[22px] flex items-center justify-center rounded-full text-dim hover:text-primary hover:bg-hover transition-colors"
+            className="w-[22px] h-[22px] flex items-center justify-center rounded-sm text-dim hover:text-primary hover:bg-hover transition-colors"
             title="Close"
             onClick={(e) => {
               e.stopPropagation();
@@ -172,7 +174,7 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
         </div>
       </div>
 
-      <div className={`relative z-[1] flex-1 overflow-y-auto overflow-x-hidden ${bodyClassName ?? ""}`}>
+      <div className={`flex-1 overflow-y-auto overflow-x-hidden ${bodyClassName ?? ""}`}>
         {children}
       </div>
     </div>
@@ -182,7 +184,7 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
 /** Full-area panel used by page tabs (wallets/earnings/settings). Replaces the feed workspace. */
 export function PageOverlay({ children }: { children: ReactNode }) {
   return (
-    <div className="glass fixed left-3 right-3 top-topbar bottom-bottombar rounded-[28px] z-0 flex flex-col overflow-hidden">
+    <div className="fixed left-3 right-3 top-topbar bottom-bottombar bg-base border border-line rounded-lg z-0 flex flex-col overflow-hidden">
       {children}
     </div>
   );

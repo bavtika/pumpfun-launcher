@@ -146,12 +146,12 @@ export function OptionsGrid() {
           return (
             <label
               key={o.key}
-              className={`group relative flex items-center gap-2 px-3.5 py-2.5 cursor-pointer rounded-[16px] transition-colors select-none ${
+              className={`group relative flex items-center gap-2 px-3.5 py-2.5 cursor-pointer rounded-md border transition-colors select-none ${
                 o.disabled
-                  ? "opacity-35 cursor-not-allowed glass-inset"
+                  ? "opacity-35 cursor-not-allowed border-line bg-white/[0.02]"
                   : checked
-                    ? "glass-inset ring-1 ring-white/30 bg-white/12"
-                    : "glass-inset hover:bg-white/10"
+                    ? "border-line-focus bg-white/[0.08]"
+                    : "border-line bg-white/[0.02] hover:bg-white/[0.05]"
               }`}
             >
               <input

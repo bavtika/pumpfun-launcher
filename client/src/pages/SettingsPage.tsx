@@ -28,7 +28,7 @@ const HL_ITEMS = [
 ];
 
 const SECTION_TITLE = "text-[10px] font-bold text-dim uppercase tracking-[0.08em] mb-3";
-const SECTION_WRAP = "glass-inset rounded-[18px] p-4 mb-3";
+const SECTION_WRAP = "bg-panel border border-line rounded-md p-4 mb-3";
 const SUB_TEXT = "text-[11px] text-dim leading-relaxed";
 
 function BellBtn({ name }: { name: string }) {
@@ -82,7 +82,7 @@ function FiltersSection() {
         </div>
         <div className="flex flex-col gap-1.5">
           {HL_ITEMS.map((h) => (
-            <div key={h.name} className="flex items-center gap-3 px-2.5 py-2 glass-inset rounded-[14px]">
+            <div key={h.name} className="flex items-center gap-3 px-2.5 py-2 bg-white/[0.02] border border-line rounded-sm">
               <div className="flex-1 min-w-0">
                 <div className="text-xs text-primary flex items-center gap-2">
                   {h.name}
@@ -120,7 +120,7 @@ function FiltersSection() {
           <button
             onClick={submit}
             title="Add keyword"
-            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full glass-inset text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-sm border border-line bg-white/[0.04] text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
               <path d="M6 2v8M2 6h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -307,7 +307,7 @@ function NotificationsSection() {
           <button
             onClick={() => playNotificationSound({ ...notif, enabled: true })}
             title="Play test sound"
-            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-full glass-inset text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="w-8 h-8 shrink-0 flex items-center justify-center rounded-sm border border-line bg-white/[0.04] text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M3 2v6l5-3z" fill="currentColor" />
@@ -380,7 +380,7 @@ function ExportImportSection() {
         <div className="flex gap-2">
           <button
             onClick={doExport}
-            className="flex items-center gap-1.5 h-8 px-4 rounded-full glass-inset text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="flex items-center gap-1.5 h-8 px-4 rounded-sm border border-line bg-white/[0.04] text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <path d="M6 8V1M3.5 5.5L6 8l2.5-2.5M2 10.5h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -389,7 +389,7 @@ function ExportImportSection() {
           </button>
           <button
             onClick={() => fileRef.current?.click()}
-            className="flex items-center gap-1.5 h-8 px-4 rounded-full glass-inset text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
+            className="flex items-center gap-1.5 h-8 px-4 rounded-sm border border-line bg-white/[0.04] text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
           >
             <svg width="11" height="11" viewBox="0 0 12 12" fill="none">
               <path d="M6 4v7M3.5 6.5L6 4l2.5 2.5M2 1.5h8" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" />
@@ -419,7 +419,7 @@ export function SettingsPage() {
 
   return (
     <div className="h-full flex">
-      <div className="w-[180px] shrink-0 border-r border-white/10 bg-white/[0.04] p-3 flex flex-col gap-1">
+      <div className="w-[180px] shrink-0 border-r border-line bg-panel/50 p-3 flex flex-col gap-1">
         <div className="text-[10px] font-bold text-dim uppercase tracking-[0.08em] px-2 py-2">
           Settings
         </div>
