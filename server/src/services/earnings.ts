@@ -14,7 +14,7 @@ import {
   OnlinePumpSdk,
   ammCreatorVaultPda,
   creatorVaultPda,
-} from "@pump-fun/pump-sdk";
+} from "../lib/pumpSdk.js";
 import { getConnection, resolveWalletKeypair, signV0Tx } from "../lib/solana.js";
 import { readWallets } from "../lib/walletStore.js";
 

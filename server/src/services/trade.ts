@@ -5,7 +5,7 @@ import {
   OnlinePumpSdk,
   getBuyTokenAmountFromSolAmount,
   getSellSolAmountFromTokenAmount,
-} from "@pump-fun/pump-sdk";
+} from "../lib/pumpSdk.js";
 import {
   getAssociatedTokenAddressSync,
   TOKEN_2022_PROGRAM_ID,

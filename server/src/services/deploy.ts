@@ -16,7 +16,8 @@ import {
   type BondingCurve,
   type Global,
   type FeeConfig,
-} from "@pump-fun/pump-sdk";
+  type PumpSdkInstance,
+} from "../lib/pumpSdk.js";
 import { PumpAgentOffline, TOKEN_AGENT_PAYMENTS_MIN_RENT_EXEMPT_LAMPORTS } from "../lib/agentSdk.js";
 import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
 import { getConnection, resolveWalletKeypair, signV0Tx } from "../lib/solana.js";
@@ -208,7 +209,7 @@ function applyBuy(curve: BondingCurve, solIn: BN, tokensOut: BN): BondingCurve {
 }
 
 async function buildExtraBuyIxs(
-  pumpSdk: PumpSdk,
+  pumpSdk: PumpSdkInstance,
   global: Global,
   feeConfig: FeeConfig,
   mint: PublicKey,

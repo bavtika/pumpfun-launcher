@@ -1,4 +1,4 @@
-import type { OnlinePumpSdk } from "@pump-fun/pump-sdk";
+import type { OnlinePumpSdkInstance as OnlinePumpSdk } from "./pumpSdk.js";
 
 const TTL_MS = 8_000;
 
