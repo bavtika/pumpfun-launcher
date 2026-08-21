@@ -31,6 +31,10 @@ interface UiState {
   deployModalOpen: boolean;
   setDeployModalOpen: (open: boolean) => void;
 
+  /** True while a deploy request is in flight (blocks keyboard re-entry). */
+  deployBusy: boolean;
+  setDeployBusy: (busy: boolean) => void;
+
   activeSettingsSection: string;
   setActiveSettingsSection: (s: string) => void;
 
@@ -67,6 +71,9 @@ export const useUiStore = create<UiState>((set) => ({
 
   deployModalOpen: false,
   setDeployModalOpen: (deployModalOpen) => set({ deployModalOpen }),
+
+  deployBusy: false,
+  setDeployBusy: (deployBusy) => set({ deployBusy }),
 
   activeSettingsSection: "filters",
   setActiveSettingsSection: (activeSettingsSection) => set({ activeSettingsSection }),
