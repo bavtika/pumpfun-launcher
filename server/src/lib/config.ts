@@ -40,7 +40,7 @@ export const WALLET_ENCRYPTION_KEY = process.env.WALLET_ENCRYPTION_KEY || "";
 export const RUNPOD_ENDPOINT_ID = process.env.RUNPOD_ENDPOINT_ID || null;
 export const RUNPOD_API_KEY = process.env.RUNPOD_API_KEY || null;
 
-export const CLIENT_DIST = path.join(ROOT_DIR, "client", "dist");
+export const CLIENT_DIST = path.join(ROOT_DIR, "dist");
 
 export const PUMP_IPFS_URL = "https://pump.fun/api/ipfs";
 
