@@ -1,0 +1,11 @@
+{
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api" }
+  ],
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60,
+      "includeFiles": "../server/src/**"
+    }
+  }
+}
