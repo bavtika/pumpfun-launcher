@@ -4,8 +4,6 @@ import { existsSync } from "fs";
 import { CLIENT_DIST } from "./lib/config.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
-import walletsRouter from "./routes/wallets.js";
-import miscRouter from "./routes/misc.js";
 
 function lazy(load: () => Promise<{ default: Router }>): RequestHandler {
   let router: Router | undefined;
@@ -38,8 +36,8 @@ export function createApp(): express.Express {
 
   app.use("/api/auth", authRouter);
   app.use("/api", requireAuth);
-  app.use("/api", miscRouter);
-  app.use("/api/wallets", walletsRouter);
+  app.use("/api", lazy(() => import("./routes/misc.js")));
+  app.use("/api/wallets", lazy(() => import("./routes/wallets.js")));
   app.use("/api/deploy", lazy(() => import("./routes/deploy.js")));
   app.use("/api/trade", lazy(() => import("./routes/trade.js")));
   app.use("/api/vamp", lazy(() => import("./routes/vamp.js")));

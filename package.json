@@ -18,5 +18,9 @@
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
+  },
+  "overrides": {
+    "rpc-websockets": "9.0.4",
+    "uuid": "8.3.2"
   }
 }
