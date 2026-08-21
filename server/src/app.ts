@@ -52,5 +52,15 @@ export function createApp(): express.Express {
     });
   }
 
+  app.use((err: unknown, _req: express.Request, res: express.Response, next: express.NextFunction) => {
+    if (res.headersSent) {
+      next(err);
+      return;
+    }
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[api]", err);
+    res.status(500).json({ error: message });
+  });
+
   return app;
 }

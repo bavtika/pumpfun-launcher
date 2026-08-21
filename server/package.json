@@ -13,6 +13,7 @@
     "@pump-fun/agent-payments-sdk": "^3.0.3",
     "@pump-fun/pump-sdk": "1.32.0",
     "@neondatabase/serverless": "^1.0.2",
+    "@noble/curves": "^1.9.7",
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
     "bn.js": "^5.2.5",
