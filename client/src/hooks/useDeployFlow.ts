@@ -39,9 +39,9 @@ async function buildDeployFormData(): Promise<FormData> {
     fd.append("image", blob, "ascii.png");
   }
 
-  fd.append("social[twitter]", s.twitter.trim());
-  fd.append("social[telegram]", s.telegram.trim());
-  fd.append("social[website]", s.website.trim());
+  fd.append("twitter", s.twitter.trim());
+  fd.append("telegram", s.telegram.trim());
+  fd.append("website", s.website.trim());
 
   fd.append("options", JSON.stringify(s.options));
   if (s.options.agent) fd.append("agentBuybackPct", String(s.agentBuybackPct));
@@ -105,6 +105,14 @@ async function deployOnce(
     (!s.options.multideploy || wallet === selected);
   if (applyCustomCA) fd.append("customCA", s.customCASecret.trim());
 
+  // Multideploy + default fee shares: bind the "dev" row to this clone's creator wallet.
+  if (s.options.feesharing && s.options.multideploy && wallet !== selected) {
+    const custom = s.feeShares.some((r) => r.address.trim());
+    if (!custom) {
+      fd.set("feeShares", JSON.stringify(feeSharesToPayload(defaultFeeShares(wallet))));
+    }
+  }
+
   return api.deploy(fd);
 }
 
@@ -146,6 +154,7 @@ export function useDeployFlow() {
 
   const confirmDeploy = useCallback(async () => {
     const ui = useUiStore.getState();
+    if (ui.deployBusy) return;
     const s = useFormStore.getState();
     const wallets = useWalletsStore.getState().wallets;
     const tradeOpen = s.tradePanelEnabled;
@@ -180,6 +189,7 @@ export function useDeployFlow() {
       }
     };
 
+    ui.setDeployBusy(true);
     try {
       if (s.options.multideploy) {
         const n = Math.max(1, s.cloneCount || 1);
@@ -192,14 +202,19 @@ export function useDeployFlow() {
 
         ui.setDeployModalOpen(false);
         const template = await buildDeployFormData();
+        const formBuy = s.customAmount ?? s.selectedAmount;
         const settled = await Promise.allSettled(
-          cloneWallets.map((w, i) =>
-            deployOnce(w.pubkey, template, s.cloneAmounts[i]).then((result) => {
+          cloneWallets.map((w, i) => {
+            const buy =
+              s.cloneAmounts[i] !== undefined && s.cloneAmounts[i] !== null
+                ? s.cloneAmounts[i]
+                : formBuy;
+            return deployOnce(w.pubkey, template, buy).then((result) => {
               toast(`✓ Clone ${i + 1} deployed (${truncateAddress(w.pubkey)})`, "success");
               afterDeploy(result, w.pubkey);
               return result;
-            })
-          )
+            });
+          })
         );
         let successCount = 0;
         settled.forEach((r, i) => {
@@ -224,6 +239,8 @@ export function useDeployFlow() {
     } catch (e) {
       console.error("Deploy error:", e);
       toast(e instanceof Error ? e.message : "Deploy failed", "error");
+    } finally {
+      useUiStore.getState().setDeployBusy(false);
     }
   }, []);
 

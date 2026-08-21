@@ -168,10 +168,11 @@ export function CreateCoinForm() {
                 <path d="M1 1.5L5.5 7.5L1 13h1.5L6 8.5l3.5 4.5H13L8.5 6.5 13 1h-1.5L7.5 5.5 4.5 1.5H1Z" fill="currentColor" />
               </svg>
               <input
-                type="url"
+                type="text"
+                inputMode="url"
                 value={twitter}
                 onChange={(e) => setField("twitter", e.target.value)}
-                placeholder="X (Twitter) URL"
+                placeholder="https://x.com/…"
                 autoComplete="off"
                 className={`${inputCls} !pl-8`}
               />
@@ -183,10 +184,11 @@ export function CreateCoinForm() {
                   <path d="M4.5 6.5h5M4.5 8.5h3" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
                 </svg>
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   value={telegram}
                   onChange={(e) => setField("telegram", e.target.value)}
-                  placeholder="Telegram"
+                  placeholder="https://t.me/…"
                   autoComplete="off"
                   className={`${inputCls} !pl-8`}
                 />
@@ -197,10 +199,11 @@ export function CreateCoinForm() {
                   <path d="M7 1.5C7 1.5 5.5 4 5.5 7s1.5 5.5 1.5 5.5M7 1.5C7 1.5 8.5 4 8.5 7S7 12.5 7 12.5M1.5 7h11" stroke="currentColor" strokeWidth="1.2" />
                 </svg>
                 <input
-                  type="url"
+                  type="text"
+                  inputMode="url"
                   value={website}
                   onChange={(e) => setField("website", e.target.value)}
-                  placeholder="Website"
+                  placeholder="https://…"
                   autoComplete="off"
                   className={`${inputCls} !pl-8`}
                 />

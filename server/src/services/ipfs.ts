@@ -22,6 +22,19 @@ const CACHE_TTL_MS = 60_000;
 const cache = new Map<string, { result: MetadataUploadResult; at: number }>();
 const inflight = new Map<string, Promise<MetadataUploadResult>>();
 
+/** Ensure social links are absolute URLs — pump.fun drops bare handles. */
+export function normalizeSocialUrl(raw: string | undefined | null): string {
+  const s = (raw || "").trim();
+  if (!s) return "";
+  if (/^https?:\/\//i.test(s)) return s;
+  if (s.startsWith("//")) return `https:${s}`;
+  // @handle → assume X
+  if (/^@[A-Za-z0-9_]{1,30}$/.test(s)) return `https://x.com/${s.slice(1)}`;
+  if (/^(x\.com|twitter\.com|t\.me|telegram\.me)\//i.test(s)) return `https://${s}`;
+  if (/^[A-Za-z0-9.-]+\.[A-Za-z]{2,}([/?#].*)?$/i.test(s)) return `https://${s}`;
+  return s;
+}
+
 function cacheKey(p: MetadataUploadParams): string {
   const h = createHash("sha256");
   h.update(p.name);
@@ -30,11 +43,11 @@ function cacheKey(p: MetadataUploadParams): string {
   h.update("\0");
   h.update(p.description || "");
   h.update("\0");
-  h.update(p.twitter || "");
+  h.update(normalizeSocialUrl(p.twitter));
   h.update("\0");
-  h.update(p.telegram || "");
+  h.update(normalizeSocialUrl(p.telegram));
   h.update("\0");
-  h.update(p.website || "");
+  h.update(normalizeSocialUrl(p.website));
   h.update("\0");
   if (p.imageBuffer?.length) h.update(p.imageBuffer);
   else h.update(p.imageUrl || "");
@@ -58,13 +71,27 @@ async function doUpload(p: MetadataUploadParams): Promise<MetadataUploadResult> 
     form.append("file", blob, "image.png");
   }
 
+  const twitter = normalizeSocialUrl(p.twitter);
+  const telegram = normalizeSocialUrl(p.telegram);
+  const website = normalizeSocialUrl(p.website);
+
   form.append("name", p.name);
   form.append("symbol", p.symbol);
   form.append("description", p.description || "");
-  form.append("twitter", p.twitter || "");
-  form.append("telegram", p.telegram || "");
-  form.append("website", p.website || "");
+  form.append("twitter", twitter);
+  form.append("telegram", telegram);
+  form.append("website", website);
   form.append("showName", "true");
+
+  const socialBits = [
+    twitter && "twitter",
+    telegram && "telegram",
+    website && "website",
+  ].filter(Boolean);
+  console.log(
+    `[*] IPFS metadata upload: ${p.name} / ${p.symbol}` +
+      (socialBits.length ? ` | socials: ${socialBits.join(", ")}` : " | socials: (none)")
+  );
 
   const res = await fetch(PUMP_IPFS_URL, {
     method: "POST",
@@ -72,7 +99,17 @@ async function doUpload(p: MetadataUploadParams): Promise<MetadataUploadResult> 
     headers: { "User-Agent": "Mozilla/5.0" },
   });
   if (!res.ok) throw new Error(`IPFS upload failed: ${res.status} ${await res.text()}`);
-  return (await res.json()) as MetadataUploadResult;
+  const json = (await res.json()) as MetadataUploadResult;
+  // Defensive: if pump echoes metadata, warn when we sent socials but they vanished.
+  const meta = json.metadata;
+  if (meta && typeof meta === "object" && socialBits.length) {
+    const m = meta as Record<string, unknown>;
+    const missing = socialBits.filter((k) => !m[k as string]);
+    if (missing.length) {
+      console.warn(`[~] IPFS response metadata missing social fields: ${missing.join(", ")}`);
+    }
+  }
+  return json;
 }
 
 export async function uploadMetadataToPumpFun(

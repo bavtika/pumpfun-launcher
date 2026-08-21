@@ -146,6 +146,29 @@ export function resolveCreateFlags(
   };
 }
 
+/** Accept flat twitter/…, nested social{}, or legacy social[twitter] multipart keys. */
+export function parseSocialFromBody(body: Record<string, unknown>): {
+  twitter: string;
+  telegram: string;
+  website: string;
+} {
+  const nested =
+    body.social && typeof body.social === "object" && !Array.isArray(body.social)
+      ? (body.social as Record<string, unknown>)
+      : {};
+  const pick = (...vals: unknown[]) => {
+    for (const v of vals) {
+      if (typeof v === "string" && v.trim()) return v.trim();
+    }
+    return "";
+  };
+  return {
+    twitter: pick(body.twitter, nested.twitter, body["social[twitter]"]),
+    telegram: pick(body.telegram, nested.telegram, body["social[telegram]"]),
+    website: pick(body.website, nested.website, body["social[website]"]),
+  };
+}
+
 /** Parse `{ pubkey, shareBps }[]`. If enabled but empty, 100% goes to fallbackPubkey (dev). */
 export function parseFeeShares(
   raw: unknown,
