@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { DeployOptions, FeeShareRow, ImageTab, MayhemAgentMode, PublicWallet, SnipeConfig } from "../api/types";
+import type { AsciiFontId } from "../lib/asciiArt";
 
 export const NAME_MAX = 30;
 export const TICKER_MAX = 10;
@@ -43,6 +44,10 @@ interface FormState {
   /** confirmed web image to use in deploy */
   imageUrl: string | null;
   asciiArt: string;
+  asciiText: string;
+  asciiFont: AsciiFontId;
+  asciiFg: string;
+  asciiBg: string;
 
   twitter: string;
   telegram: string;
@@ -103,6 +108,10 @@ export const useFormStore = create<FormState>((set, get) => ({
   webImageUrl: "",
   imageUrl: null,
   asciiArt: "",
+  asciiText: "",
+  asciiFont: "Standard",
+  asciiFg: "#fafafa",
+  asciiBg: "#0a0a0a",
 
   twitter: "",
   telegram: "",

@@ -11,38 +11,6 @@ import { toast } from "../stores/toast";
 import { truncateAddress } from "../lib/format";
 import { defaultFeeShares, feeShareError, feeSharesToPayload, resolveDevPubkey } from "../lib/feeShares";
 
-/** Renders ASCII art to a PNG blob so pump.fun metadata always has a real image. */
-function asciiToPngBlob(art: string): Promise<Blob | null> {
-  const lines = art.replace(/\t/g, "  ").split("\n");
-  while (lines.length && !lines[lines.length - 1].trim()) lines.pop();
-  if (!lines.length) return Promise.resolve(null);
-
-  const fontSize = 24;
-  const lineHeight = Math.round(fontSize * 1.25);
-  const font = `${fontSize}px "Courier New", monospace`;
-
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) return Promise.resolve(null);
-
-  ctx.font = font;
-  const charWidth = ctx.measureText("M").width;
-  const maxCols = Math.max(...lines.map((l) => l.length));
-  const pad = Math.round(fontSize * 1.5);
-
-  canvas.width = Math.ceil(charWidth * maxCols + pad * 2);
-  canvas.height = lineHeight * lines.length + pad * 2;
-
-  ctx.fillStyle = "#0a0a0a";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.font = font;
-  ctx.textBaseline = "top";
-  ctx.fillStyle = "#e5e5e5";
-  lines.forEach((l, i) => ctx.fillText(l, pad, pad + i * lineHeight));
-
-  return new Promise((res) => canvas.toBlob((b) => res(b), "image/png"));
-}
-
 async function buildDeployFormData(): Promise<FormData> {
   const s = useFormStore.getState();
   const { selectedPubkey } = useWalletsStore.getState();
@@ -61,7 +29,12 @@ async function buildDeployFormData(): Promise<FormData> {
   } else if (s.imageUrl) {
     fd.append("imageUrl", s.imageUrl);
   } else if (s.imageTab === "ascii" && s.asciiArt.trim()) {
-    const blob = await asciiToPngBlob(s.asciiArt);
+    const { asciiToPngBlob } = await import("../lib/asciiArt");
+    const blob = await asciiToPngBlob(s.asciiArt, {
+      fg: s.asciiFg,
+      bg: s.asciiBg,
+      size: 1024,
+    });
     if (!blob) throw new Error("Failed to render ASCII art to image");
     fd.append("image", blob, "ascii.png");
   }
