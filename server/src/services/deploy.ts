@@ -12,7 +12,6 @@ import {
   OnlinePumpSdk,
   getBuyTokenAmountFromSolAmount,
   newBondingCurve,
-  BONDING_CURVE_NEW_SIZE,
   PUMP_PROGRAM_ID,
   type BondingCurve,
   type Global,
@@ -25,6 +24,9 @@ import { readWallets } from "../lib/wallets.js";
 import { fetchPumpGlobals } from "../lib/pumpCache.js";
 import { uploadMetadataToPumpFun } from "./ipfs.js";
 import { sendJitoBundle, buildJitoTipIx, waitForJitoBundle, JITO_MAX_TXS } from "./jito.js";
+
+/** Matches @pump-fun/pump-sdk BONDING_CURVE_NEW_SIZE — inlined so Vercel ESM resolve cannot drop the named export. */
+const BONDING_CURVE_NEW_SIZE = 151;
 
 export interface BundleBuy {
   pubkey: string;
