@@ -8,11 +8,16 @@ import {
 } from "../lib/pumpSdk.js";
 import {
   getAssociatedTokenAddressSync,
+  NATIVE_MINT,
   TOKEN_2022_PROGRAM_ID,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
 import { getConnection, resolveWalletKeypair, buildSignAndSend } from "../lib/solana.js";
 import { fetchPumpGlobals } from "../lib/pumpCache.js";
+
+function quoteMintForCurve(quoteMint: PublicKey): PublicKey {
+  return quoteMint.equals(PublicKey.default) ? NATIVE_MINT : quoteMint;
+}
 
 export interface TradeBalance {
   tokenBalance: string;
@@ -72,6 +77,7 @@ export async function buyToken(p: BuyParams): Promise<{ signature: string; explo
     mintSupply: bondingCurve.tokenTotalSupply,
     bondingCurve,
     amount: solLamports,
+    quoteMint: quoteMintForCurve(bondingCurve.quoteMint),
   });
 
   const instructions = await pumpSdk.buyInstructions({

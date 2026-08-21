@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",
+    "@types/figlet": "^1.7.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "@vitejs/plugin-react": "^6.0.5",
@@ -19,17 +20,18 @@
     "vite": "^8.2.1"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.31.1",
     "@neondatabase/serverless": "^1.0.2",
     "@noble/curves": "^1.9.7",
-    "@coral-xyz/anchor": "^0.31.1",
     "@pump-fun/agent-payments-sdk": "^3.0.3",
-    "@pump-fun/pump-sdk": "1.32.0",
+    "@pump-fun/pump-sdk": "^1.36.0",
     "@pump-fun/pump-swap-sdk": "^1.13.0",
     "@solana/spl-token": "^0.4.15",
     "@solana/web3.js": "^1.98.4",
     "bn.js": "^5.2.5",
     "bs58": "^6.0.0",
     "express": "^4.22.2",
+    "figlet": "^1.11.4",
     "multer": "^2.2.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

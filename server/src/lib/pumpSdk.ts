@@ -19,7 +19,7 @@ const sdk = require("@pump-fun/pump-sdk") as {
   OnlinePumpSdk: new (connection: Connection) => OnlinePumpSdkType;
   getBuyTokenAmountFromSolAmount: (args: Record<string, unknown>) => BN;
   getSellSolAmountFromTokenAmount: (args: Record<string, unknown>) => BN;
-  newBondingCurve: (global: Global) => BondingCurve;
+  newBondingCurve: (global: Global, quoteMint?: PublicKey) => BondingCurve;
   PUMP_PROGRAM_ID: PublicKey;
   ammCreatorVaultPda: (creator: PublicKey) => PublicKey;
   creatorVaultPda: (creator: PublicKey) => PublicKey;

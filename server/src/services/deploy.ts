@@ -19,7 +19,7 @@ import {
   type PumpSdkInstance,
 } from "../lib/pumpSdk.js";
 import { PumpAgentOffline, TOKEN_AGENT_PAYMENTS_MIN_RENT_EXEMPT_LAMPORTS } from "../lib/agentSdk.js";
-import { TOKEN_2022_PROGRAM_ID } from "@solana/spl-token";
+import { NATIVE_MINT, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { getConnection, resolveWalletKeypair, signV0Tx } from "../lib/solana.js";
 import { readWallets } from "../lib/wallets.js";
 import { fetchPumpGlobals } from "../lib/pumpCache.js";
@@ -201,9 +201,9 @@ function sol(lamports: number): string {
 function applyBuy(curve: BondingCurve, solIn: BN, tokensOut: BN): BondingCurve {
   return {
     ...curve,
-    virtualSolReserves: curve.virtualSolReserves.add(solIn),
+    virtualQuoteReserves: curve.virtualQuoteReserves.add(solIn),
     virtualTokenReserves: curve.virtualTokenReserves.sub(tokensOut),
-    realSolReserves: curve.realSolReserves.add(solIn),
+    realQuoteReserves: curve.realQuoteReserves.add(solIn),
     realTokenReserves: curve.realTokenReserves.sub(tokensOut),
   };
 }
@@ -223,6 +223,7 @@ async function buildExtraBuyIxs(
     mintSupply: curve.tokenTotalSupply,
     bondingCurve: curve,
     amount: solLamports,
+    quoteMint: NATIVE_MINT,
   });
   const ixs = await pumpSdk.buyInstructions({
     global,
@@ -322,6 +323,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       mintSupply: null,
       bondingCurve: null,
       amount: solLamports,
+      quoteMint: NATIVE_MINT,
     });
     console.log(
       `[*] Building create+buy instructions (${p.buyAmountSol} SOL dev buy${cashback ? ", cashback" : ""}${mayhemMode ? `, mayhem ${mayhemAgentMode}` : ""})...`
@@ -369,16 +371,27 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
   }
 
   if (feeSharing) {
-    const shareIxs = await pumpSdk.createSharingConfigWithSocialRecipients({
-      creator: deployerKey.publicKey,
-      mint,
-      pool: null,
-      newShareholders: feeShares.map((s) => ({
-        address: new PublicKey(s.pubkey),
-        shareBps: s.shareBps,
-      })),
-    });
-    createIxs.push(...shareIxs);
+    const creator = deployerKey.publicKey;
+    const newShareholders = feeShares.map((s) => ({
+      address: new PublicKey(s.pubkey),
+      shareBps: s.shareBps,
+    }));
+    // create_fee_sharing_config starts as [(creator, 10000)]; update once to final shares.
+    createIxs.push(
+      await pumpSdk.createFeeSharingConfig({
+        creator,
+        mint,
+        pool: null,
+      }),
+      await pumpSdk.updateFeeSharesV2({
+        authority: creator,
+        mint,
+        currentShareholders: [creator],
+        newShareholders,
+        quoteMint: NATIVE_MINT,
+        quoteTokenProgram: TOKEN_PROGRAM_ID,
+      })
+    );
     console.log(
       `[*] Fee sharing: ${feeShares.map((s) => `${s.pubkey.slice(0, 6)}… ${s.shareBps / 100}%`).join(", ")}`
     );
@@ -408,7 +421,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     .filter((x): x is { buy: BundleBuy; kp: Keypair } => Boolean(x));
 
   let curve: BondingCurve = {
-    ...newBondingCurve(global),
+    ...newBondingCurve(global, NATIVE_MINT),
     creator: deployerKey.publicKey,
     isMayhemMode: mayhemMode,
     isCashbackCoin: cashback,
@@ -420,6 +433,7 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       mintSupply: null,
       bondingCurve: null,
       amount: solLamports,
+      quoteMint: NATIVE_MINT,
     });
     curve = applyBuy(curve, solLamports, creatorTokens);
   }
@@ -499,7 +513,9 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
       const msg = JSON.stringify(conf.value.err);
       const hint = msg.includes('"Custom":1')
         ? " (likely insufficient SOL for create rent ~0.02 + buy + Jito tip)"
-        : "";
+        : msg.includes('"Custom":6062')
+          ? " (BuybackFeeRecipientMissing — pump program requires buyback fee recipient on buy)"
+          : "";
       throw new Error(`Create tx failed: ${msg}${hint}`);
     }
     await Promise.all(
