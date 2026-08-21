@@ -5,7 +5,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 60,
-      "includeFiles": "{../server/src/**,../server/package.json}"
+      "includeFiles": "{../server/src/**,../server/package.json,./node_modules/@pump-fun/**,./node_modules/@coral-xyz/**,./node_modules/@solana/**,./node_modules/@noble/**,./node_modules/rpc-websockets/**,./node_modules/uuid/**,./node_modules/bn.js/**,./node_modules/bs58/**,./node_modules/borsh/**,./node_modules/buffer/**,./node_modules/jayson/**,./node_modules/superstruct/**,./node_modules/ws/**,./node_modules/eventemitter3/**,./node_modules/base-x/**,./node_modules/toml/**,./node_modules/camelcase/**}"
     }
   }
 }

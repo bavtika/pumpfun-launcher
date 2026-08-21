@@ -5,6 +5,23 @@ type App = (req: IncomingMessage, res: ServerResponse) => void;
 let app: App | undefined;
 let appError: string | undefined;
 
+/**
+ * Literal dynamic imports so Vercel file-tracing packs Solana/pump deps used by
+ * lazy server routes (deploy/trade/earnings claim). Without these anchors the
+ * lambda is ~2MB and claim fails with MODULE_NOT_FOUND / broken requires.
+ */
+export async function __vercelNftAnchors(): Promise<void> {
+  await Promise.all([
+    import("@solana/web3.js"),
+    import("@solana/spl-token"),
+    import("@pump-fun/pump-sdk"),
+    import("@pump-fun/pump-swap-sdk"),
+    import("@coral-xyz/anchor"),
+    import("bn.js"),
+    import("bs58"),
+  ]);
+}
+
 function pathnameOf(req: IncomingMessage): string {
   const raw = req.url || "/";
   const q = raw.indexOf("?");

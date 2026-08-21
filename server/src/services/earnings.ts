@@ -99,22 +99,36 @@ export async function claimCreatorRewards(
     throw Object.assign(new Error("Nothing to claim"), { status: 400 });
   }
 
-  const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash("confirmed");
+  const { blockhash } = await conn.getLatestBlockhash("confirmed");
   const tx = signV0Tx(userKey.publicKey, ixs, [userKey], blockhash);
   const signature = await conn.sendRawTransaction(tx.serialize(), {
     skipPreflight: true,
     maxRetries: 3,
   });
-  const conf = await conn.confirmTransaction(
-    { signature, blockhash, lastValidBlockHeight },
-    "confirmed"
-  );
-  if (conf.value.err) {
-    throw new Error(`Claim failed: ${JSON.stringify(conf.value.err)}`);
+
+  // Poll HTTP statuses — avoid rpc-websockets subscription path on Vercel.
+  const started = Date.now();
+  let confirmed = false;
+  while (Date.now() - started < 45_000) {
+    const st = await conn.getSignatureStatuses([signature], {
+      searchTransactionHistory: false,
+    });
+    const val = st?.value?.[0];
+    if (val?.err) {
+      throw new Error(`Claim failed: ${JSON.stringify(val.err)}`);
+    }
+    if (val && (val.confirmationStatus === "confirmed" || val.confirmationStatus === "finalized")) {
+      confirmed = true;
+      break;
+    }
+    await new Promise((r) => setTimeout(r, 800));
+  }
+  if (!confirmed) {
+    throw new Error("Claim sent but not confirmed in time — check Solscan");
   }
 
   console.log(
-    `💰 Claimed ${lamportsToSol(claimable).toFixed(6)} SOL creator rewards → ${walletPubkey.slice(0, 8)}… | tx: ${signature}`
+    `Claimed ${lamportsToSol(claimable).toFixed(6)} SOL creator rewards → ${walletPubkey.slice(0, 8)}… | tx: ${signature}`
   );
 
   return {

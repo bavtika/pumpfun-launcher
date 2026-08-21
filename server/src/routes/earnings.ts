@@ -25,8 +25,12 @@ router.post("/creator/claim", async (req, res) => {
     const { claimCreatorRewards } = await import("../services/earnings.js");
     res.json(await claimCreatorRewards(requireUserId(req), walletPubkey));
   } catch (e) {
+    console.error("[earnings/claim]", e);
     const status = (e as { status?: number }).status ?? 500;
-    res.status(status).json({ error: errMsg(e) });
+    res.status(status).json({
+      error: errMsg(e),
+      detail: e instanceof Error ? e.stack?.split("\n").slice(0, 4).join(" | ") : undefined,
+    });
   }
 });
 
