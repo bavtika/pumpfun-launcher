@@ -1,16 +1,35 @@
-import express from "express";
+import express, { type RequestHandler, type Router } from "express";
 import path from "path";
 import { existsSync } from "fs";
 import { CLIENT_DIST } from "./lib/config.js";
 import { requireAuth } from "./middleware/requireAuth.js";
 import authRouter from "./routes/auth.js";
 import walletsRouter from "./routes/wallets.js";
-import deployRouter from "./routes/deploy.js";
-import tradeRouter from "./routes/trade.js";
-import vampRouter from "./routes/vamp.js";
-import vanityRouter from "./routes/vanity.js";
-import earningsRouter from "./routes/earnings.js";
 import miscRouter from "./routes/misc.js";
+
+function lazy(load: () => Promise<{ default: Router }>): RequestHandler {
+  let router: Router | undefined;
+  let pending: Promise<Router> | undefined;
+  return (req, res, next) => {
+    const use = (r: Router) => {
+      r(req, res, next);
+    };
+    if (router) {
+      use(router);
+      return;
+    }
+    pending ??= load()
+      .then((m) => {
+        router = m.default;
+        return router;
+      })
+      .catch((err) => {
+        pending = undefined;
+        throw err;
+      });
+    pending.then(use).catch(next);
+  };
+}
 
 export function createApp(): express.Express {
   const app = express();
@@ -21,13 +40,12 @@ export function createApp(): express.Express {
   app.use("/api", requireAuth);
   app.use("/api", miscRouter);
   app.use("/api/wallets", walletsRouter);
-  app.use("/api/deploy", deployRouter);
-  app.use("/api/trade", tradeRouter);
-  app.use("/api/vamp", vampRouter);
-  app.use("/api/vanity", vanityRouter);
-  app.use("/api/earnings", earningsRouter);
+  app.use("/api/deploy", lazy(() => import("./routes/deploy.js")));
+  app.use("/api/trade", lazy(() => import("./routes/trade.js")));
+  app.use("/api/vamp", lazy(() => import("./routes/vamp.js")));
+  app.use("/api/vanity", lazy(() => import("./routes/vanity.js")));
+  app.use("/api/earnings", lazy(() => import("./routes/earnings.js")));
 
-  // Serve the built SPA only — never the project root (protects .env).
   if (existsSync(CLIENT_DIST)) {
     app.use(express.static(CLIENT_DIST));
     app.get("*", (req, res, next) => {

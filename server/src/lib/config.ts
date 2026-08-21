@@ -2,26 +2,37 @@ import { existsSync, readFileSync } from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-export const ROOT_DIR = path.resolve(__dirname, "..", "..", "..");
+function detectRootDir(): string {
+  try {
+    return path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..", "..", "..");
+  } catch {
+    return process.cwd();
+  }
+}
+
+export const ROOT_DIR = detectRootDir();
 
 function loadDotenv() {
-  const envPath = path.join(ROOT_DIR, ".env");
-  if (!existsSync(envPath)) return;
-  for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
-    const trimmed = line.trim();
-    if (!trimmed || trimmed.startsWith("#")) continue;
-    const eq = trimmed.indexOf("=");
-    if (eq < 1) continue;
-    const key = trimmed.slice(0, eq).trim();
-    let val = trimmed.slice(eq + 1).trim();
-    if (
-      (val.startsWith('"') && val.endsWith('"')) ||
-      (val.startsWith("'") && val.endsWith("'"))
-    ) {
-      val = val.slice(1, -1);
+  try {
+    const envPath = path.join(ROOT_DIR, ".env");
+    if (!existsSync(envPath)) return;
+    for (const line of readFileSync(envPath, "utf8").split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) continue;
+      const eq = trimmed.indexOf("=");
+      if (eq < 1) continue;
+      const key = trimmed.slice(0, eq).trim();
+      let val = trimmed.slice(eq + 1).trim();
+      if (
+        (val.startsWith('"') && val.endsWith('"')) ||
+        (val.startsWith("'") && val.endsWith("'"))
+      ) {
+        val = val.slice(1, -1);
+      }
+      if (process.env[key] === undefined) process.env[key] = val;
     }
-    if (process.env[key] === undefined) process.env[key] = val;
+  } catch {
+    // Vercel injects env vars; a missing .env file is expected.
   }
 }
 loadDotenv();

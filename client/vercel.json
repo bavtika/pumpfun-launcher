@@ -5,7 +5,7 @@
   "functions": {
     "api/index.ts": {
       "maxDuration": 60,
-      "includeFiles": "../server/src/**"
+      "includeFiles": "{../server/src/**,../server/package.json}"
     }
   }
 }
