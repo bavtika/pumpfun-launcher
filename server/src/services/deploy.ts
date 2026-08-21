@@ -22,7 +22,9 @@ import { PumpAgentOffline, TOKEN_AGENT_PAYMENTS_MIN_RENT_EXEMPT_LAMPORTS } from 
 import { NATIVE_MINT, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import {
   getConnection,
+  mintExists,
   resolveWalletKeypair,
+  sendAndConfirmTx,
   signV0Tx,
   signV0TxFitting,
 } from "../lib/solana.js";
@@ -507,27 +509,53 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     }
   }
 
-  const { blockhash } = await conn.getLatestBlockhash("confirmed");
+  const { blockhash, lastValidBlockHeight: _jitoLv } = await conn.getLatestBlockhash("confirmed");
   const tipIx = p.useJito ? await buildJitoTipIx(deployerKey.publicKey, p.jitoTipSol ?? 0.001) : null;
   const createSigners = [mintKp, deployerKey];
 
-  const combinedCreate = signV0TxFitting(
+  // Prefer a priority-fee tx. If create+buy + fee doesn't fit, split so each half can carry a fee
+  // (a fee-less fat tx often never lands on public RPC).
+  const pricedCombined = signV0TxFitting(
     deployerKey.publicKey,
-    [createIxs],
+    [[cuPriceIx, ...createIxs]],
     createSigners,
     blockhash
   );
-  const signedTxs = combinedCreate
-    ? [combinedCreate]
-    : buyIxs.length > 0
-      ? [
-          signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash),
-          signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], blockhash),
-        ]
-      : [signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash)];
+  const bareCombined = pricedCombined
+    ? null
+    : signV0TxFitting(deployerKey.publicKey, [createIxs], createSigners, blockhash);
+  const splitForFee = Boolean(buyIxs.length > 0 && !pricedCombined);
 
-  if (!combinedCreate && buyIxs.length > 0) {
-    console.warn(`[~] create+buy exceeds tx size limit; splitting into ${signedTxs.length} txs`);
+  const signedTxs: ReturnType<typeof signV0Tx>[] = [];
+  if (pricedCombined) {
+    signedTxs.push(pricedCombined);
+  } else if (splitForFee) {
+    console.warn(`[~] create+buy + priority fee exceeds size; splitting setup/buy`);
+    const setupTx =
+      signV0TxFitting(
+        deployerKey.publicKey,
+        [[cuPriceIx, ...setupIxs], setupIxs],
+        createSigners,
+        blockhash
+      ) ?? signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash);
+    const buyTx =
+      signV0TxFitting(
+        deployerKey.publicKey,
+        [[cuPriceIx, ...buyIxs], buyIxs],
+        [deployerKey],
+        blockhash
+      ) ?? signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], blockhash);
+    signedTxs.push(setupTx, buyTx);
+  } else if (bareCombined) {
+    console.warn(`[~] create+buy only fits without priority fee — landing may be slow`);
+    signedTxs.push(bareCombined);
+  } else if (buyIxs.length > 0) {
+    signedTxs.push(
+      signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash),
+      signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], blockhash)
+    );
+  } else {
+    signedTxs.push(signV0Tx(deployerKey.publicKey, setupIxs, createSigners, blockhash));
   }
 
   signedTxs.push(
@@ -548,26 +576,20 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
 
   const mintAddr = mint.toBase58();
   const pumpUrl = `https://pump.fun/${mintAddr}`;
+  const checkMint = () => mintExists(conn, mint);
 
   if (p.useJito) {
     try {
       const bundleId = await sendJitoBundle(signedTxs);
       console.log(`[*] Jito bundle submitted: ${bundleId} | mint=${mintAddr} | txs=${signedTxs.length}`);
-      const landed = await waitForJitoBundle(bundleId, 5000);
-      if (landed) {
+      const landed = await waitForJitoBundle(bundleId, 12_000, checkMint);
+      if (landed || (await checkMint())) {
         console.log(`✅ Jito bundle landed: ${bundleId} | mint=${mintAddr}`);
-        return { bundleId, mint: mintAddr, pumpUrl, imageUrl };
-      }
-      // Avoid racing an RPC create against a late-landing Jito bundle.
-      const already = await conn.getAccountInfo(mint).catch(() => null);
-      if (already) {
-        console.log(`✅ Mint on-chain after Jito poll window (late land): ${mintAddr}`);
         return { bundleId, mint: mintAddr, pumpUrl, imageUrl };
       }
       console.warn(`[~] Jito bundle did not land in time, falling back to RPC`);
     } catch (e) {
-      const already = await conn.getAccountInfo(mint).catch(() => null);
-      if (already) {
+      if (await checkMint()) {
         console.log(`✅ Mint on-chain after Jito error (late land): ${mintAddr}`);
         return { mint: mintAddr, pumpUrl, imageUrl };
       }
@@ -575,52 +597,72 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     }
   }
 
-  const { blockhash: bh2 } = await conn.getLatestBlockhash("confirmed");
-  const rpcPriority = [cuPriceIx, ...createIxs];
-  const rpcCombined = signV0TxFitting(
-    deployerKey.publicKey,
-    // Priority fee only when it still fits — create+buy is already near the 1232-byte cap.
-    extraIxs.length === 0 ? [rpcPriority, createIxs] : [createIxs],
-    createSigners,
-    bh2
-  );
+  if (await checkMint()) {
+    console.log(`✅ Mint on-chain before RPC fallback: ${mintAddr}`);
+    return { mint: mintAddr, pumpUrl, imageUrl };
+  }
 
-  const sendConfirm = async (tx: ReturnType<typeof signV0Tx>, label: string) => {
-    const sig = await conn.sendRawTransaction(tx.serialize(), {
-      skipPreflight: true,
-      maxRetries: 5,
-    });
-    const conf = await conn.confirmTransaction(sig, "confirmed");
-    if (conf.value.err) {
-      const msg = JSON.stringify(conf.value.err);
-      const hint = msg.includes('"Custom":1')
-        ? " (likely insufficient SOL for create rent ~0.02 + buy + Jito tip)"
-        : msg.includes('"Custom":6062')
-          ? " (BuybackFeeRecipientMissing — pump program requires buyback fee recipient on buy)"
-          : "";
-      throw new Error(`${label} failed: ${msg}${hint}`);
-    }
-    return sig;
-  };
+  const {
+    blockhash: bh2,
+    lastValidBlockHeight: lv2,
+  } = await conn.getLatestBlockhash("confirmed");
 
-  try {
-    let sig: string;
-    if (rpcCombined) {
-      sig = await sendConfirm(rpcCombined, "Create tx");
-    } else if (buyIxs.length > 0) {
-      console.warn(`[~] RPC create+buy too large; sending setup then buy`);
-      await sendConfirm(signV0Tx(deployerKey.publicKey, setupIxs, createSigners, bh2), "Create tx");
-      sig = await sendConfirm(
-        signV0TxFitting(
+  // Rebuild with a fresh blockhash for RPC (Jito txs may be near expiry).
+  const rpcSetup =
+    signV0TxFitting(
+      deployerKey.publicKey,
+      [[cuPriceIx, ...setupIxs], setupIxs],
+      createSigners,
+      bh2
+    ) ?? signV0Tx(deployerKey.publicKey, setupIxs, createSigners, bh2);
+  const rpcBuy =
+    buyIxs.length > 0
+      ? signV0TxFitting(
           deployerKey.publicKey,
           [[cuPriceIx, ...buyIxs], buyIxs],
           [deployerKey],
           bh2
-        ) ?? signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], bh2),
-        "Buy tx"
-      );
+        ) ?? signV0Tx(deployerKey.publicKey, buyIxs, [deployerKey], bh2)
+      : null;
+  const rpcCombined =
+    !splitForFee && buyIxs.length > 0
+      ? signV0TxFitting(
+          deployerKey.publicKey,
+          [[cuPriceIx, ...createIxs], createIxs],
+          createSigners,
+          bh2
+        )
+      : null;
+
+  try {
+    let sig: string;
+    if (rpcCombined) {
+      sig = await sendAndConfirmTx(conn, rpcCombined, {
+        label: "Create tx",
+        blockhash: bh2,
+        lastValidBlockHeight: lv2,
+        successMint: mint,
+      });
     } else {
-      throw new Error("Create tx exceeds Solana size limit");
+      if (splitForFee || buyIxs.length > 0) {
+        console.warn(`[~] RPC path: sending setup then buy (priority fee on each)`);
+      }
+      const setupSig = await sendAndConfirmTx(conn, rpcSetup, {
+        label: "Create tx",
+        blockhash: bh2,
+        lastValidBlockHeight: lv2,
+        successMint: mint,
+      });
+      if (rpcBuy) {
+        sig = await sendAndConfirmTx(conn, rpcBuy, {
+          label: "Buy tx",
+          blockhash: bh2,
+          lastValidBlockHeight: lv2,
+          successMint: null,
+        });
+      } else {
+        sig = setupSig;
+      }
     }
     await Promise.all(
       extraIxs.map(({ kp, ixs }) =>
@@ -633,10 +675,8 @@ export async function deployToken(p: DeployParams): Promise<DeployResult> {
     console.log(`✅ Token deployed${extraIxs.length ? " (+bundle buys)" : ""}: mint=${mintAddr} tx=${sig}`);
     return { signature: sig, mint: mintAddr, pumpUrl, imageUrl };
   } catch (e) {
-    // Jito may have landed after the poll window; same mint then fails on RPC.
-    const info = await conn.getAccountInfo(mint).catch(() => null);
-    if (info) {
-      console.log(`✅ Mint already on-chain (likely late Jito land): ${mintAddr}`);
+    if (await checkMint()) {
+      console.log(`✅ Mint already on-chain (likely late land): ${mintAddr}`);
       return { mint: mintAddr, pumpUrl, imageUrl };
     }
     throw e;

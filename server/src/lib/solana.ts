@@ -10,6 +10,9 @@ import bs58 from "bs58";
 import { RPC_URL } from "./config.js";
 import { readWallets } from "./wallets.js";
 
+/** Solana UDP packet limit for a serialized transaction. */
+export const MAX_TX_BYTES = 1232;
+
 let _conn: Connection | null = null;
 export const getConnection = (): Connection => {
   if (!_conn) _conn = new Connection(RPC_URL, "confirmed");
@@ -47,10 +50,7 @@ export async function resolveWalletKeypair(
   return null;
 }
 
-/** Solana UDP packet limit for a serialized transaction. */
-export const MAX_TX_BYTES = 1232;
-
-/** Build a v0 transaction, sign and send. Does not wait for confirmation. */
+/** Build a v0 transaction and sign it. Does not send. */
 export function signV0Tx(
   payer: PublicKey,
   instructions: TransactionInstruction[],
@@ -89,6 +89,78 @@ export function signV0TxFitting(
     if (txFits(tx)) return tx;
   }
   return null;
+}
+
+export async function mintExists(conn: Connection, mint: PublicKey): Promise<boolean> {
+  const info = await conn.getAccountInfo(mint, "confirmed").catch(() => null);
+  return Boolean(info);
+}
+
+/**
+ * Send a signed tx and wait until confirmed, or until `successMint` appears.
+ * Re-broadcasts periodically (same bytes → same signature) to survive flaky RPCs.
+ */
+export async function sendAndConfirmTx(
+  conn: Connection,
+  tx: VersionedTransaction,
+  opts: {
+    label?: string;
+    blockhash: string;
+    lastValidBlockHeight: number;
+    successMint?: PublicKey | null;
+  }
+): Promise<string> {
+  const label = opts.label ?? "Transaction";
+  const raw = tx.serialize();
+  const sig = await conn.sendRawTransaction(raw, {
+    skipPreflight: true,
+    maxRetries: 2,
+  });
+
+  const rebcast = setInterval(() => {
+    void conn
+      .sendRawTransaction(raw, { skipPreflight: true, maxRetries: 0 })
+      .catch(() => undefined);
+  }, 2500);
+
+  try {
+    while (true) {
+      const height = await conn.getBlockHeight("confirmed").catch(() => 0);
+      if (height > opts.lastValidBlockHeight) break;
+
+      if (opts.successMint && (await mintExists(conn, opts.successMint))) {
+        return sig;
+      }
+
+      const st = await conn.getSignatureStatus(sig, { searchTransactionHistory: false });
+      const v = st.value;
+      if (v?.err) {
+        throw new Error(`${label} failed: ${JSON.stringify(v.err)}`);
+      }
+      if (v?.confirmationStatus === "confirmed" || v?.confirmationStatus === "finalized") {
+        return sig;
+      }
+
+      await new Promise((r) => setTimeout(r, 750));
+    }
+
+    if (opts.successMint && (await mintExists(conn, opts.successMint))) return sig;
+    const late = await conn.getSignatureStatus(sig, { searchTransactionHistory: true });
+    if (late.value?.err) {
+      throw new Error(`${label} failed: ${JSON.stringify(late.value.err)}`);
+    }
+    if (
+      late.value?.confirmationStatus === "confirmed" ||
+      late.value?.confirmationStatus === "finalized"
+    ) {
+      return sig;
+    }
+    throw new Error(
+      `${label} not confirmed before blockhash expiry. Check https://solscan.io/tx/${sig}`
+    );
+  } finally {
+    clearInterval(rebcast);
+  }
 }
 
 export async function buildSignAndSend(

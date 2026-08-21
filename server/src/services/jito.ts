@@ -101,8 +101,12 @@ interface InflightStatus {
   result?: { value?: Array<{ bundle_id?: string; status?: string }> };
 }
 
-/** Poll until Landed/Failed/timeout. Accept is not a land — we must wait. */
-export async function waitForJitoBundle(bundleId: string, timeoutMs = 5000): Promise<boolean> {
+/** Poll until Landed/Failed/timeout. Also succeeds early if mintCheck reports on-chain. */
+export async function waitForJitoBundle(
+  bundleId: string,
+  timeoutMs = 12_000,
+  mintCheck?: () => Promise<boolean>
+): Promise<boolean> {
   const payload = JSON.stringify({
     jsonrpc: "2.0",
     id: 1,
@@ -111,6 +115,7 @@ export async function waitForJitoBundle(bundleId: string, timeoutMs = 5000): Pro
   });
   const started = Date.now();
   while (Date.now() - started < timeoutMs) {
+    if (mintCheck && (await mintCheck().catch(() => false))) return true;
     const checks = JITO_BUNDLE_ENDPOINTS.map(async (endpoint) => {
       const r = await fetch(endpoint, {
         method: "POST",
@@ -131,8 +136,9 @@ export async function waitForJitoBundle(bundleId: string, timeoutMs = 5000): Pro
     } catch {
       // keep polling
     }
-    await new Promise((r) => setTimeout(r, 400));
+    await new Promise((r) => setTimeout(r, 500));
   }
+  if (mintCheck && (await mintCheck().catch(() => false))) return true;
   return false;
 }
 
