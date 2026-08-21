@@ -1,0 +1,229 @@
+@import "tailwindcss";
+
+/*
+ * Design system — minimal dark monochrome (Linear / Vercel style).
+ * Flat near-black surfaces, hairline borders, white as the only accent,
+ * comfortable density, subtle motion. No gradients, no glows.
+ */
+
+@theme {
+  /* Backgrounds */
+  --color-base: #0a0a0a;
+  --color-panel: #101010;
+  --color-card: #161616;
+  --color-input: #0c0c0c;
+  --color-hover: rgba(255, 255, 255, 0.05);
+
+  /* Borders — hairlines */
+  --color-line: rgba(255, 255, 255, 0.07);
+  --color-line-focus: rgba(255, 255, 255, 0.2);
+
+  /* Text */
+  --color-primary: #fafafa;
+  --color-muted: #a3a3a3;
+  --color-dim: #5c5c5c;
+
+  /* Accent — pure monochrome: white */
+  --color-accent: #fafafa;
+  --color-green: #46a758;
+  --color-cyan: #4aa8a0;
+  --color-amber: #d9a13b;
+  --color-purple: #9a8fc9;
+  --color-indigo: #7d87c9;
+  --color-danger: #e5484d;
+
+  /* Layout — structural */
+  --spacing-topbar: 60px;
+  --spacing-bottombar: 68px;
+
+  /* Radius */
+  --radius-sm: 8px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+
+  /* Fonts */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--color-primary);
+  background-color: var(--color-base);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+/* ── Number inputs — no native spinner arrows ───────────── */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ── Minimal scrollbars ─────────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 99px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.16);
+  background-clip: content-box;
+}
+
+/* ── Subtle motion ──────────────────────────────────────── */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes slideUp {
+  from { transform: translateY(6px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Selection & keyboard focus ─────────────────────────── */
+::selection {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 1.5px solid rgba(255, 255, 255, 0.3);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+button:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ── Resize handles — functional hit areas, 8 directions ── */
+.win-resize {
+  position: absolute;
+  z-index: 20;
+}
+.win-resize-n { top: 0; left: 8px; right: 8px; height: 5px; cursor: ns-resize; }
+.win-resize-s { bottom: 0; left: 8px; right: 8px; height: 5px; cursor: ns-resize; }
+.win-resize-e { right: 0; top: 8px; bottom: 8px; width: 5px; cursor: ew-resize; }
+.win-resize-w { left: 0; top: 8px; bottom: 8px; width: 5px; cursor: ew-resize; }
+.win-resize-ne { top: 0; right: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+.win-resize-nw { top: 0; left: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.win-resize-se { bottom: 0; right: 0; width: 12px; height: 12px; cursor: nwse-resize; }
+.win-resize-sw { bottom: 0; left: 0; width: 12px; height: 12px; cursor: nesw-resize; }
+
+/* ── Toggle switch ──────────────────────────────────────── */
+.toggle-switch {
+  position: relative;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
+  flex-shrink: 0;
+}
+.toggle-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.toggle-knob {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.09);
+  border-radius: 99px;
+  transition: background 0.15s;
+  cursor: pointer;
+}
+.toggle-knob::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  background: var(--color-dim);
+  border-radius: 50%;
+  transition: transform 0.15s, background 0.15s;
+}
+.toggle-switch input:checked + .toggle-knob {
+  background: #fafafa;
+}
+.toggle-switch input:checked + .toggle-knob::after {
+  transform: translateX(14px);
+  background: #0a0a0a;
+}
+
+/* ── Range slider ───────────────────────────────────────── */
+.volume-slider {
+  width: 100%;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+  cursor: pointer;
+}
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fafafa;
+  cursor: pointer;
+}
+.volume-slider::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: #fafafa;
+  cursor: pointer;
+  border: none;
+}
+
+/* ── Loading spinner (buttons) ──────────────────────────── */
+.btn-loading {
+  pointer-events: none;
+  opacity: 0.6;
+}
+.btn-loading::after {
+  content: "";
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-left: 8px;
+  border: 2px solid rgba(0, 0, 0, 0.25);
+  border-top-color: #0a0a0a;
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  vertical-align: -2px;
+}
