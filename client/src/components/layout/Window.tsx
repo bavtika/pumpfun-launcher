@@ -1,5 +1,4 @@
 import { useCallback, useRef, type ReactNode, type MouseEvent as ReactMouseEvent } from "react";
-import { createPortal } from "react-dom";
 import {
   useLayoutStore,
   computeResize,
@@ -182,12 +181,11 @@ export function Window({ id, title, icon, headerRight, children, bodyClassName }
   );
 }
 
-/** Full-area overlay used by page panels (wallets/earnings/settings). */
+/** Full-area panel used by page tabs (wallets/earnings/settings). Replaces the feed workspace. */
 export function PageOverlay({ children }: { children: ReactNode }) {
-  return createPortal(
-    <div className="fixed left-2.5 right-2.5 top-topbar bottom-bottombar bg-panel border border-line rounded-lg z-[90] flex flex-col overflow-hidden animate-[fadeIn_0.15s_ease]">
+  return (
+    <div className="fixed left-3 right-3 top-topbar bottom-bottombar bg-base border border-line rounded-lg z-0 flex flex-col overflow-hidden">
       {children}
-    </div>,
-    document.body
+    </div>
   );
 }

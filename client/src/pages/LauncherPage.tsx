@@ -29,24 +29,17 @@ export function LauncherPage() {
   return (
     <div className="h-full">
       <Topbar />
-      <Workspace />
+      <div className={activePage === "feed" ? "" : "hidden"}>
+        <Workspace />
+      </div>
+      {activePage !== "feed" && (
+        <PageOverlay>
+          {activePage === "wallets" && <WalletsPage />}
+          {activePage === "earnings" && <EarningsPage />}
+          {activePage === "settings" && <SettingsPage />}
+        </PageOverlay>
+      )}
       <BottomBar />
-
-      {activePage === "wallets" && (
-        <PageOverlay>
-          <WalletsPage />
-        </PageOverlay>
-      )}
-      {activePage === "earnings" && (
-        <PageOverlay>
-          <EarningsPage />
-        </PageOverlay>
-      )}
-      {activePage === "settings" && (
-        <PageOverlay>
-          <SettingsPage />
-        </PageOverlay>
-      )}
 
       <DeployModal onConfirm={confirmDeploy} />
       <OptionPopovers />

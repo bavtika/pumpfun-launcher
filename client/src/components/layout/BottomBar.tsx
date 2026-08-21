@@ -212,7 +212,7 @@ export function BottomBar() {
           return (
             <button
               key={item.key}
-              onClick={() => setActivePage(item.key)}
+              onClick={() => setActivePage(active ? "feed" : item.key)}
               aria-current={active ? "page" : undefined}
               className={`flex items-center gap-1.5 h-9 px-3.5 rounded-md text-[12.5px] transition-colors ${
                 active
