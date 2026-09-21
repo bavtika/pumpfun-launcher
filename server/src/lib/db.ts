@@ -41,6 +41,12 @@ export async function ensureSchema(): Promise<void> {
         UNIQUE (user_id, pubkey)
       )`;
       await q`CREATE INDEX IF NOT EXISTS wallets_user_id_idx ON wallets(user_id)`;
+      await q`CREATE TABLE IF NOT EXISTS vanity_jobs (
+        job_id TEXT PRIMARY KEY,
+        user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+      )`;
+      await q`CREATE INDEX IF NOT EXISTS vanity_jobs_user_id_idx ON vanity_jobs(user_id)`;
     })().catch((e) => {
       migrated = null;
       throw e;

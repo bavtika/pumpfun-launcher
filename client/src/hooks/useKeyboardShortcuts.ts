@@ -15,6 +15,7 @@ export function useKeyboardShortcuts(opts: {
       const ui = useUiStore.getState();
       if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
         e.preventDefault();
+        if (ui.deployBusy) return;
         if (ui.deployModalOpen) opts.onConfirmDeploy();
         else opts.onDeployIntent();
         return;

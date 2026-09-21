@@ -240,9 +240,14 @@ function MultideployPopover() {
   const setField = useFormStore((s) => s.setField);
   const cloneWallets = useFormStore((s) => s.cloneWallets);
   const cloneAmounts = useFormStore((s) => s.cloneAmounts);
+  const selectedAmount = useFormStore((s) => s.selectedAmount);
+  const customAmount = useFormStore((s) => s.customAmount);
   const wallets = useWalletsStore((s) => s.wallets);
 
-  const amountFor = (i: number) => cloneAmounts[i] ?? 0;
+  const formBuy = customAmount ?? selectedAmount;
+  // Match deploy behavior: unset clone amount falls back to the main form buy.
+  const amountFor = (i: number) =>
+    cloneAmounts[i] !== undefined && cloneAmounts[i] !== null ? cloneAmounts[i] : formBuy;
   const total = Array.from({ length: cloneCount }, (_, i) => amountFor(i)).reduce((a, b) => a + b, 0);
 
   return (

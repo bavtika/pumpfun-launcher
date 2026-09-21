@@ -1,5 +1,7 @@
 import { Router } from "express";
 import { RUNPOD_API_KEY, RUNPOD_ENDPOINT_ID, errMsg } from "../lib/config.js";
+import { requireUserId } from "../lib/auth.js";
+import { getSql } from "../lib/db.js";
 
 const router = Router();
 
@@ -21,6 +23,12 @@ const notConfigured = (res: import("express").Response) =>
     error: "GPU vanity not configured. Set RUNPOD_ENDPOINT_ID and RUNPOD_API_KEY env vars.",
   });
 
+async function assertJobOwner(jobId: string, userId: string): Promise<boolean> {
+  const q = getSql();
+  const rows = await q`SELECT 1 FROM vanity_jobs WHERE job_id = ${jobId} AND user_id = ${userId} LIMIT 1`;
+  return rows.length > 0;
+}
+
 // POST /api/vanity — start a GPU vanity job on RunPod serverless.
 router.post("/", async (req, res) => {
   try {
@@ -35,6 +43,7 @@ router.post("/", async (req, res) => {
     const base = runpodBase();
     if (!base) return notConfigured(res);
 
+    const userId = requireUserId(req);
     const r = await fetch(`${base}/run`, {
       method: "POST",
       headers: runpodHeaders(),
@@ -44,6 +53,11 @@ router.post("/", async (req, res) => {
     if (!r.ok || !data.id) {
       return res.status(502).json({ error: data.error || `RunPod error: ${r.status}` });
     }
+
+    const q = getSql();
+    await q`INSERT INTO vanity_jobs (job_id, user_id) VALUES (${data.id}, ${userId})
+      ON CONFLICT (job_id) DO NOTHING`;
+
     res.json({ jobId: data.id });
   } catch (e) {
     res.status(500).json({ error: errMsg(e) });
@@ -56,7 +70,13 @@ router.get("/:jobId", async (req, res) => {
     const base = runpodBase();
     if (!base) return notConfigured(res);
 
-    const r = await fetch(`${base}/status/${encodeURIComponent(req.params.jobId)}`, {
+    const jobId = req.params.jobId;
+    const userId = requireUserId(req);
+    if (!(await assertJobOwner(jobId, userId))) {
+      return res.status(404).json({ error: "Vanity job not found" });
+    }
+
+    const r = await fetch(`${base}/status/${encodeURIComponent(jobId)}`, {
       headers: runpodHeaders(),
     });
     const data = (await r.json().catch(() => ({}))) as {
@@ -83,10 +103,18 @@ router.delete("/:jobId", async (req, res) => {
     const base = runpodBase();
     if (!base) return notConfigured(res);
 
-    await fetch(`${base}/cancel/${encodeURIComponent(req.params.jobId)}`, {
+    const jobId = req.params.jobId;
+    const userId = requireUserId(req);
+    if (!(await assertJobOwner(jobId, userId))) {
+      return res.status(404).json({ error: "Vanity job not found" });
+    }
+
+    await fetch(`${base}/cancel/${encodeURIComponent(jobId)}`, {
       method: "POST",
       headers: runpodHeaders(),
     });
+    const q = getSql();
+    await q`DELETE FROM vanity_jobs WHERE job_id = ${jobId} AND user_id = ${userId}`;
     res.json({ ok: true });
   } catch (e) {
     res.status(500).json({ error: errMsg(e) });

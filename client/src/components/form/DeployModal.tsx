@@ -22,8 +22,9 @@ const OPTION_LABELS: Record<string, string> = {
 };
 
 export function DeployModal({ onConfirm }: DeployModalProps) {
-  const { deployModalOpen, setDeployModalOpen } = useUiStore();
+  const { deployModalOpen, setDeployModalOpen, deployBusy } = useUiStore();
   const [busy, setBusy] = useState(false);
+  const signing = busy || deployBusy;
 
   const name = useFormStore((s) => s.name);
   const ticker = useFormStore((s) => s.ticker);
@@ -53,6 +54,7 @@ export function DeployModal({ onConfirm }: DeployModalProps) {
     });
 
   const handleConfirm = async () => {
+    if (signing) return;
     setBusy(true);
     try {
       await onConfirm();
@@ -64,23 +66,26 @@ export function DeployModal({ onConfirm }: DeployModalProps) {
   return (
     <Modal
       open={deployModalOpen}
-      onClose={() => setDeployModalOpen(false)}
+      onClose={() => {
+        if (!signing) setDeployModalOpen(false);
+      }}
       title="Confirm Deploy"
       footer={
         <>
           <button
             onClick={() => setDeployModalOpen(false)}
-            className="h-8 px-4 rounded-sm border border-line text-xs text-muted hover:text-primary hover:bg-hover transition-colors"
+            disabled={signing}
+            className="h-8 px-4 rounded-sm border border-line text-xs text-muted hover:text-primary hover:bg-hover transition-colors disabled:opacity-60"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
-            disabled={busy}
-            className={`h-8 px-4 flex items-center gap-1.5 rounded-sm bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${busy ? "btn-loading" : ""}`}
+            disabled={signing}
+            className={`h-8 px-4 flex items-center gap-1.5 rounded-sm bg-primary text-black text-xs font-semibold hover:bg-white/85 transition-colors disabled:opacity-60 ${signing ? "btn-loading" : ""}`}
           >
             <FlameIcon size={14} />
-            {busy ? "Signing…" : "Confirm Deploy"}
+            {signing ? "Signing…" : "Confirm Deploy"}
           </button>
         </>
       }

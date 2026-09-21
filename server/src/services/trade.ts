@@ -89,7 +89,8 @@ export async function buyToken(p: BuyParams): Promise<{ signature: string; explo
     user: userKey.publicKey,
     solAmount: solLamports,
     amount: tokenAmount,
-    slippage: (p.slippage ?? 15) / 100,
+    // pump-sdk expects percent units (1 = 1%), same as deploy bundle buys.
+    slippage: p.slippage ?? 15,
     tokenProgram: TOKEN_2022_PROGRAM_ID,
   });
 
@@ -115,16 +116,41 @@ export async function sellToken(p: SellParams): Promise<{ signature: string; exp
 
   const mintPk = new PublicKey(p.mint);
 
-  const [{ global, feeConfig }, sellState, amount] = await Promise.all([
+  // Prefer Token-2022 (pump.fun v2), fall back to legacy SPL if that ATA holds the balance.
+  let tokenProgram = TOKEN_2022_PROGRAM_ID;
+  let amount: BN | null = p.tokenAmount ? new BN(String(p.tokenAmount)) : null;
+  if (!amount) {
+    for (const prog of [TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID]) {
+      try {
+        const info = await conn.getTokenAccountBalance(
+          getAssociatedTokenAddressSync(mintPk, userKey.publicKey, true, prog)
+        );
+        amount = new BN(info.value.amount);
+        tokenProgram = prog;
+        break;
+      } catch {
+        // try next program
+      }
+    }
+    if (!amount) throw new Error("No token balance to sell");
+  } else {
+    // Explicit amount: detect which program actually holds the ATA.
+    for (const prog of [TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID]) {
+      try {
+        await conn.getTokenAccountBalance(
+          getAssociatedTokenAddressSync(mintPk, userKey.publicKey, true, prog)
+        );
+        tokenProgram = prog;
+        break;
+      } catch {
+        // try next
+      }
+    }
+  }
+
+  const [{ global, feeConfig }, sellState] = await Promise.all([
     fetchPumpGlobals(onlineSdk),
-    onlineSdk.fetchSellState(mintPk, userKey.publicKey, TOKEN_2022_PROGRAM_ID),
-    p.tokenAmount
-      ? Promise.resolve(new BN(String(p.tokenAmount)))
-      : conn
-          .getTokenAccountBalance(
-            getAssociatedTokenAddressSync(mintPk, userKey.publicKey, true, TOKEN_2022_PROGRAM_ID)
-          )
-          .then((info) => new BN(info.value.amount)),
+    onlineSdk.fetchSellState(mintPk, userKey.publicKey, tokenProgram),
   ]);
   const { bondingCurveAccountInfo, bondingCurve } = sellState;
 
@@ -144,8 +170,9 @@ export async function sellToken(p: SellParams): Promise<{ signature: string; exp
     user: userKey.publicKey,
     amount,
     solAmount,
-    slippage: (p.slippage ?? 15) / 100,
-    tokenProgram: TOKEN_2022_PROGRAM_ID,
+    // pump-sdk expects percent units (1 = 1%), same as deploy bundle buys.
+    slippage: p.slippage ?? 15,
+    tokenProgram,
     mayhemMode: bondingCurve.isMayhemMode,
   });
 

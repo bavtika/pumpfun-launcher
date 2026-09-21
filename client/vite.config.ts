@@ -7,7 +7,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:3000",
+      // Prefer IPv4 — on Windows `localhost` often resolves to ::1 while the
+      // Express server binds 127.0.0.1 only, which breaks the Vite API proxy.
+      "/api": "http://127.0.0.1:3000",
     },
   },
 });

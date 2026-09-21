@@ -1,64 +1,113 @@
 # pump.fun Token Launcher
 
-Веб-интерфейс для деплоя токенов на pump.fun. Доступ по логину; кошельки хранятся в Postgres и видны только своему пользователю.
+Full-stack Solana token launcher for [pump.fun](https://pump.fun): authenticated multi-user wallets, create+buy (Jito / RPC), trading, creator earnings, and optional GPU vanity mint grinding on RunPod.
 
-## Стек
+Built as a **production-shaped** npm monorepo on **Vercel serverless + Neon Postgres**, with GitHub Actions CI and encrypted secrets at rest — suitable as a DevOps / platform engineering portfolio piece.
 
-- **client/** — React 19 + TypeScript + Vite + Tailwind CSS v4 + Zustand
-- **server/** — Express + TypeScript
-- **api/** — Vercel serverless entry (тот же Express app)
-- npm workspaces, vite proxy `/api` → `:3000`
+[![CI](https://github.com/bavtika/pumpfun-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/bavtika/pumpfun-launcher/actions/workflows/ci.yml)
 
-## Локальный запуск
+## Why this repo (DevOps angle)
+
+| Area | What you can point to |
+| --- | --- |
+| **Delivery** | GitHub → Actions CI (`tsc` + Vite) → Vercel CD from `main` |
+| **Runtime** | Single Express app as a Vercel Function (`api/`), SPA static output, 60s max duration for on-chain deploys |
+| **Data** | Neon serverless Postgres; schema bootstrap on first request; per-user row isolation |
+| **Secrets** | Env-only config; AES-wrapped wallet keys; gitignored `.env` / `.wallets.json` |
+| **Edge cases** | Solana tx size limits, Jito fallback, priority fees, durable confirm + rebroadcast |
+| **Optional GPU** | Dockerized RunPod serverless worker for vanity CA grinding |
+
+```mermaid
+flowchart LR
+  Browser["Vite SPA"] -->|HTTPS /api| Vercel["Vercel Function\nExpress"]
+  Vercel --> Neon[(Neon Postgres)]
+  Vercel --> RPC["Solana RPC"]
+  Vercel --> Jito["Jito Block Engine"]
+  Vercel --> PumpIPFS["pump.fun IPFS"]
+  Vercel -.->|optional| RunPod["RunPod GPU\nvanity worker"]
+  GH["GitHub Actions CI"] --> Vercel
+```
+
+## Stack
+
+- **client/** — React 19, TypeScript, Vite 8, Tailwind CSS v4, Zustand
+- **server/** — Express, TypeScript, `@pump-fun/pump-sdk`, Neon serverless driver
+- **api/** — Vercel serverless entry (same Express app)
+- **runpod-worker/** — Docker image for OpenCL vanity address jobs
+- npm workspaces · Node 22
+
+## Quick start (local)
 
 ```bash
 npm install
-cp .env.example .env   # заполни SITE_PASSWORD, WALLET_ENCRYPTION_KEY, DATABASE_URL, RPC_URL
+cp .env.example .env   # fill SITE_PASSWORD, WALLET_ENCRYPTION_KEY, DATABASE_URL, RPC_URL
 npm run dev
 ```
 
-- Client: http://localhost:5173
-- API: http://localhost:3000
-
-Первый вход: **Register** (username + password + access password из `SITE_PASSWORD`).
-
-## Переменные окружения
-
-| Ключ | Зачем |
+| Service | URL |
 | --- | --- |
-| `SITE_PASSWORD` | Общий пароль на вход и регистрацию |
-| `WALLET_ENCRYPTION_KEY` | Шифрует приватники кошельков в БД (64 hex или фраза ≥16 символов) |
-| `DATABASE_URL` | Postgres (Neon / Vercel Postgres) |
-| `RPC_URL` | Solana RPC |
-| `RUNPOD_ENDPOINT_ID` / `RUNPOD_API_KEY` | GPU vanity (опционально) |
+| Client (Vite) | http://localhost:5173 |
+| API | http://localhost:3000 |
 
-Не коммить `.env` и `.wallets.json`.
+First visit: **Register** with username, password, and the shared `SITE_PASSWORD`.
 
-## Production (Vercel + Neon + GitHub)
+### Scripts
 
-1. Создай **private** GitHub repo и запушь `main`.
-2. Создай бесплатную БД [Neon](https://neon.tech) (или Vercel Storage → Postgres) и скопируй `DATABASE_URL`.
-3. Import project на [Vercel](https://vercel.com): Root Directory = репозиторий, Framework = Other. `vercel.json` уже задаёт build/output/API rewrite.
-4. Environment variables на Vercel (Production + Preview):
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | API + client with proxy |
+| `npm run build` | Typecheck/build server + client |
+| `npm run ci` | Same as CI build |
+| `npm run test:smoke` | HTTP smoke against a running local API (needs `.env`) |
 
-   - `SITE_PASSWORD`
-   - `WALLET_ENCRYPTION_KEY`
-   - `DATABASE_URL`
-   - `RPC_URL`
-   - `RUNPOD_*` при необходимости
+## Environment
 
-5. Deploy. Таблицы `users` / `sessions` / `wallets` создаются сами при первом запросе.
-6. CI: `.github/workflows/ci.yml` гоняет `tsc` + Vite build на каждый push/PR. CD — автодеплой Vercel с GitHub.
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `SITE_PASSWORD` | yes | Shared gate on login/register |
+| `WALLET_ENCRYPTION_KEY` | yes | Encrypts wallet secrets in DB (64 hex **or** passphrase ≥16 chars) |
+| `DATABASE_URL` | yes | Postgres (Neon / Vercel Postgres) |
+| `RPC_URL` | yes | Solana JSON-RPC |
+| `PORT` | no | Local API port (default `3000`) |
+| `RUNPOD_ENDPOINT_ID` / `RUNPOD_API_KEY` | no | GPU vanity endpoint |
 
-## Структура
+Never commit `.env` or `.wallets.json`.
+
+## Production deploy (Vercel + Neon)
+
+1. Push `main` to GitHub (this repo).
+2. Create a Neon (or Vercel Postgres) database → copy `DATABASE_URL`.
+3. Import the project in [Vercel](https://vercel.com). Root = repository root. `vercel.json` sets install/build/output and `/api/*` rewrite.
+4. Set Production (+ Preview) env: `SITE_PASSWORD`, `WALLET_ENCRYPTION_KEY`, `DATABASE_URL`, `RPC_URL` (+ RunPod if used).
+5. Deploy. Tables are created on first authenticated request.
+6. CI: `.github/workflows/ci.yml` builds on every push/PR. CD: Vercel Git integration.
+
+### RunPod vanity worker (optional)
+
+See [`runpod-worker/README.md`](./runpod-worker/README.md) for Docker build, endpoint settings, and the job API contract. Vanity jobs are bound to the authenticated user in Postgres (no cross-user status polling).
+
+## Layout
 
 ```
-devvv/
-├── api/index.ts            # Vercel serverless → Express
-├── client/                 # Vite SPA
+├── api/index.ts              # Vercel → Express
+├── client/                   # SPA + client/api (NFT tracing anchors)
 ├── server/src/
-│   ├── lib/auth.ts, db.ts, wallets.ts
-│   └── routes/             # auth, wallets, deploy, trade, vamp, vanity, earnings
+│   ├── lib/                  # auth, db, crypto, Solana helpers
+│   ├── routes/               # auth, wallets, deploy, trade, vamp, vanity, earnings
+│   └── services/             # deploy, jito, ipfs, trade, …
+├── runpod-worker/            # GPU vanity Dockerfile + handler
+├── scripts/                  # vercel SPA sync + local smoke
 ├── vercel.json
 └── .github/workflows/ci.yml
 ```
+
+## Security notes (portfolio / ops)
+
+- Site is not public without `SITE_PASSWORD`; sessions are cookie-based.
+- Wallet private keys are encrypted before storage; decryption only for signing.
+- Deploy never falls back to a shared `DEPLOYER_PRIVKEY` — each user must own a wallet.
+- Vanity job IDs are scoped per user; RunPod outputs mint keypairs (no funds) — see worker README.
+
+## License
+
+MIT — see [LICENSE](./LICENSE).

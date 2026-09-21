@@ -2,7 +2,7 @@
   "name": "pumpfun-launcher",
   "version": "2.0.0",
   "private": true,
-  "description": "Token deploy UI for pump.fun",
+  "description": "Full-stack pump.fun token launcher — Vercel serverless, Neon Postgres, Jito/Solana deploy pipeline, optional RunPod vanity GPU worker",
   "workspaces": [
     "client",
     "server"
@@ -14,7 +14,8 @@
     "build": "npm run build -w server && npm run build -w client",
     "vercel-build": "npm run build -w client && node scripts/sync-spa-dist.mjs",
     "start": "node server/dist/index.js",
-    "ci": "npm run build"
+    "ci": "npm run build",
+    "test:smoke": "node scripts/pipeline-smoke.mjs"
   },
   "devDependencies": {
     "concurrently": "^10.0.5"
