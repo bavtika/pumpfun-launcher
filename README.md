@@ -2,20 +2,7 @@
 
 Full-stack Solana token launcher for [pump.fun](https://pump.fun): authenticated multi-user wallets, create+buy (Jito / RPC), trading, creator earnings, and optional GPU vanity mint grinding on RunPod.
 
-Built as a **production-shaped** npm monorepo on **Vercel serverless + Neon Postgres**, with GitHub Actions CI and encrypted secrets at rest — suitable as a DevOps / platform engineering portfolio piece.
-
 [![CI](https://github.com/bavtika/pumpfun-launcher/actions/workflows/ci.yml/badge.svg)](https://github.com/bavtika/pumpfun-launcher/actions/workflows/ci.yml)
-
-## Why this repo (DevOps angle)
-
-| Area | What you can point to |
-| --- | --- |
-| **Delivery** | GitHub → Actions CI (`tsc` + Vite) → Vercel CD from `main` |
-| **Runtime** | Single Express app as a Vercel Function (`api/`), SPA static output, 60s max duration for on-chain deploys |
-| **Data** | Neon serverless Postgres; schema bootstrap on first request; per-user row isolation |
-| **Secrets** | Env-only config; AES-wrapped wallet keys; gitignored `.env` / `.wallets.json` |
-| **Edge cases** | Solana tx size limits, Jito fallback, priority fees, durable confirm + rebroadcast |
-| **Optional GPU** | Dockerized RunPod serverless worker for vanity CA grinding |
 
 ```mermaid
 flowchart LR
